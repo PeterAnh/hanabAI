@@ -98,15 +98,6 @@ public class Agent21749914 implements Agent {
 			switch (type) 
 			{
 				case PLAY:
-					cardIndex = previous.getCard();
-					c = temp.getHand(player)[cardIndex].getColour();
-					colourIndex = getColourIndex(c); 
-					v = temp.getHand(player)[cardIndex].getValue();
-					
-					currentDeck[v-1][colourIndex]--;
-
-					history[player].cards[cardIndex].reset(currentDeck);
-					break;
 				case DISCARD:
 					cardIndex = previous.getCard();
 					c = temp.getHand(player)[cardIndex].getColour();
@@ -114,7 +105,7 @@ public class Agent21749914 implements Agent {
 					v = temp.getHand(player)[cardIndex].getValue();
 					
 					currentDeck[v-1][colourIndex]--;
-
+					numCardRemaining--;
 					history[player].cards[cardIndex].reset(currentDeck);
 					break;
 				case HINT_COLOUR:
@@ -126,6 +117,9 @@ public class Agent21749914 implements Agent {
 						if(previous.getHintedCards()[i])
 						{
 							history[receiver].cards[i].colour = c;
+							history[receiver].cards[i].updateColour(c);
+						} else {
+							history[receiver].cards[i].updateNotColour(c);
 						}
 					}
 					break;
@@ -138,6 +132,9 @@ public class Agent21749914 implements Agent {
 						if(previous.getHintedCards()[i])
 						{
 							history[receiver].cards[i].number = v;
+							history[receiver].cards[i].updateValue(v);
+						} else {
+							history[receiver].cards[i].updateNotValue(v);
 						}
 					}
 					break;
@@ -154,67 +151,89 @@ public class Agent21749914 implements Agent {
 	 */
 	public Action playProbablySafeCard(State s, double probability)
 	{
-		return null;
+		Action action = null;
+		int player = s.getObserver();
+		
+		Card[] playableCard = getPlaybleCards(s);
+		
+		//TODO: Loop through our hand
+		//TODO: Loop through the boolean table of each card
+		//TODO: Check if the playable cards are ticked or not
+		//TODO: Take the sum of the number of the playable cards from the currentDeck
+		//TODO: Take the sum of the number of all the not-ticked cards
+		//TODO: Divide to get the probability of playability
+		//TODO: Play the card with highest probability
+		
+		
+		return action;
 	}
 	
+	/*
+	 * Get a set of cards that are playable
+	 */
+	private Card[] getPlaybleCards(State s)
+	{
+		Card[] result = new Card[5];
+		int value = 0;
+		Colour colour = null;
+		for(int i = 0; i < colourArray.length; i++)
+		{
+			value = 0;
+			colour = colourArray[i];
+			if(!s.getFirework(colourArray[i]).isEmpty())
+			{
+				value = s.getFirework(colourArray[i]).peek().getValue();
+				if(value == 5)
+				{
+					value = -1;
+				}
+			}
+			result[i] = new Card(colour, value+1);
+		}
+		
+		return result;
+	}
 	/*
 	 * playSafeCard: Plays a card only if it is guaranteed 
 	 * that it is playable
 	 */
 	public Action playSafeCard (State s) throws IllegalActionException
 	{
-		Action a = null;
+		Action action = null;
 		int player = s.getObserver();
-		//TODO: Check the fireworks to see which card can be played for each color
+		//Check the fireworks to see which card can be played for each color
 		for(int i = 0; i < colourArray.length; i++)
 		{
+			int value = 0;
 			//Check if the current firework is empty
-			if(s.getFirework(colourArray[i]).isEmpty())
+			if(!s.getFirework(colourArray[i]).isEmpty())
 			{
-				//Check if we have a 1 for that colour
-				for(int j = 0; j < history[player].cards.length; j++)
-				{
-					if(history[player].cards[j].number == 1)
-					{
-						if(history[player].cards[j].colour == colourArray[i])
-						{
-							a = new Action(player,this.toString(),ActionType.PLAY,j);
-							break;
-						}
-					}
-				}
-				if (a != null)
-				{
-					break;
-				}
+				value = s.getFirework(colourArray[i]).peek().getValue();				
 			}
-			
-			int v = s.getFirework(colourArray[i]).peek().getValue();
-			Colour c = s.getFirework(colourArray[i]).peek().getColour();
-			
-			//TODO: Check which card you already know
+
+			//Check which card you already know that is playable
 			for(int j = 0; j < history[player].cards.length; j++)
 			{
-				if(history[player].cards[j].number == v+1)
+				if(history[player].cards[j].number == value+1)
 				{
-					if(history[player].cards[j].colour == c)
+					if(history[player].cards[j].colour == colourArray[i])
 					{
-						a = new Action(player,this.toString(),ActionType.PLAY,j);
+						action = new Action(player,this.toString(),ActionType.PLAY,j);
 						break;
 					}
 				}
-				if(a != null)
-				{
-					break;
-				}
+			}
+			
+			if(action != null)
+			{
+				break;
 			}
 		}
-		
-		
-		//TODO: Play the damn card
-		return a;
-	}
 	
+		//TODO: Play the damn card
+		return action;
+	}
+
 	public Action tellAnyoneAboutUsefulCard(State s)
 	{
 		return null;
@@ -290,7 +309,57 @@ public class Agent21749914 implements Agent {
 			number = -1;
 			colour = null;
 		}
-
+		
+		public void updateNotColour(Colour c)
+		{
+			int column = getColourIndex(c);
+			for(int i = 0; i < notCard.length; i++)
+			{
+				notCard[i][column] = true;
+			}
+		}
+		
+		public void updateColour(Colour c)
+		{
+			int column = getColourIndex(c);
+			for(int i = 0; i < notCard.length; i++)
+			{
+				if(i == column)
+				{
+					continue;
+				}
+				for(int j = 0; j < notCard.length; j++)
+				{
+					notCard[j][i] = true;
+				}
+			}
+		}
+		
+		public void updateNotValue(int v)
+		{
+			int row = v-1;
+			for(int i = 0; i < notCard.length; i++)
+			{
+				notCard[row][i] = true;
+			}
+		}
+		
+		public void updateValue(int v)
+		{
+			int row = v-1;
+			for(int i = 0; i < notCard.length; i++)
+			{
+				if(i == row)
+				{
+					continue;
+				}
+				for(int j = 0; j < notCard.length; j++)
+				{
+					notCard[i][j] = true;
+				}
+			}
+		}
+		
 	}
 	
 	private int getColourIndex(Colour c) {
