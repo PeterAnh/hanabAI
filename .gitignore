@@ -1,3 +1,5 @@
 # ignore class files`
 **/*.class
 src/agents/ModelAgent*
+.classpath
+.project
