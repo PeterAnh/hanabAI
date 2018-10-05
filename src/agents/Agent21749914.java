@@ -161,33 +161,58 @@ public class Agent21749914 implements Agent {
 	 * playSafeCard: Plays a card only if it is guaranteed 
 	 * that it is playable
 	 */
-	public Action playSafeCard (State s)
+	public Action playSafeCard (State s) throws IllegalActionException
 	{
 		Action a = null;
 		int player = s.getObserver();
 		//TODO: Check the fireworks to see which card can be played for each color
 		for(int i = 0; i < colourArray.length; i++)
 		{
+			//Check if the current firework is empty
+			if(s.getFirework(colourArray[i]).isEmpty())
+			{
+				//Check if we have a 1 for that colour
+				for(int j = 0; j < history[player].cards.length; j++)
+				{
+					if(history[player].cards[j].number == 1)
+					{
+						if(history[player].cards[j].colour == colourArray[i])
+						{
+							a = new Action(player,this.toString(),ActionType.PLAY,j);
+							break;
+						}
+					}
+				}
+				if (a != null)
+				{
+					break;
+				}
+			}
+			
 			int v = s.getFirework(colourArray[i]).peek().getValue();
 			Colour c = s.getFirework(colourArray[i]).peek().getColour();
 			
 			//TODO: Check which card you already know
-			
 			for(int j = 0; j < history[player].cards.length; j++)
 			{
 				if(history[player].cards[j].number == v+1)
 				{
 					if(history[player].cards[j].colour == c)
 					{
-						a = new Action(player,toString(),)
+						a = new Action(player,this.toString(),ActionType.PLAY,j);
+						break;
 					}
+				}
+				if(a != null)
+				{
+					break;
 				}
 			}
 		}
 		
 		
 		//TODO: Play the damn card
-		return null;
+		return a;
 	}
 	
 	public Action tellAnyoneAboutUsefulCard(State s)
