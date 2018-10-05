@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ignore class files
 **/*.class
 #ignore the model solution
@@ -6,3 +7,7 @@ src/agents/ModelAgent*
 build.sh
 #ignore the doc
 doc/*
+=======
+/agents/
+/hanabAI/
+>>>>>>> Update agent
