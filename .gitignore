@@ -2,7 +2,12 @@
 **/*.class
 #ignore the model solution
 src/agents/ModelAgent*
+<<<<<<< HEAD
 #ignore the buildfile
 build.sh
 #ignore the doc
 doc/*
+=======
+.classpath
+.project
+>>>>>>> Update gitignore
