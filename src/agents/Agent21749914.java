@@ -93,55 +93,28 @@ public class Agent21749914 implements Agent {
 			Colour c = null;
 			int v = 0;
 			int receiver = 0;
+			int colourIndex = 0;
 			
 			switch (type) 
 			{
 				case PLAY:
 					cardIndex = previous.getCard();
 					c = temp.getHand(player)[cardIndex].getColour();
+					colourIndex = getColourIndex(c); 
 					v = temp.getHand(player)[cardIndex].getValue();
+					
+					currentDeck[v-1][colourIndex]--;
 
-					switch (c) {
-					case BLUE:
-						currentDeck[v-1][0] = currentDeck[v-1][0] - 1;
-						break;
-					case GREEN:
-						currentDeck[v-1][1] = currentDeck[v-1][1] - 1;
-						break;
-					case RED:
-						currentDeck[v-1][2] = currentDeck[v-1][2] - 1;
-						break;
-					case WHITE:
-						currentDeck[v-1][3] = currentDeck[v-1][3] - 1;
-						break;
-					case YELLOW:
-						currentDeck[v-1][4] = currentDeck[v-1][4] - 1;
-						break;
-					}
 					history[player].cards[cardIndex].reset(currentDeck);
 					break;
 				case DISCARD:
 					cardIndex = previous.getCard();
 					c = temp.getHand(player)[cardIndex].getColour();
+					colourIndex = getColourIndex(c); 
 					v = temp.getHand(player)[cardIndex].getValue();
+					
+					currentDeck[v-1][colourIndex]--;
 
-					switch (c) {
-					case BLUE:
-						currentDeck[v-1][0] = currentDeck[v-1][0] - 1;
-						break;
-					case GREEN:
-						currentDeck[v-1][1] = currentDeck[v-1][1] - 1;
-						break;
-					case RED:
-						currentDeck[v-1][2] = currentDeck[v-1][2] - 1;
-						break;
-					case WHITE:
-						currentDeck[v-1][3] = currentDeck[v-1][3] - 1;
-						break;
-					case YELLOW:
-						currentDeck[v-1][4] = currentDeck[v-1][4] - 1;
-						break;
-					}
 					history[player].cards[cardIndex].reset(currentDeck);
 					break;
 				case HINT_COLOUR:
@@ -172,8 +145,10 @@ public class Agent21749914 implements Agent {
 		}
 	}
 	
+
+	
 	/*
-	 * playProbablySafeCard(Threshold ∈ [0, 1]): Plays the
+	 * playProbablySafeCard(Threshold [0, 1]): Plays the
 	 * card that is the most likely to be playable if it is at least
 	 * as probable as Threshold.
 	 */
@@ -291,6 +266,23 @@ public class Agent21749914 implements Agent {
 			colour = null;
 		}
 
+	}
+	
+	private int getColourIndex(Colour c) {
+		switch (c) {
+		case BLUE:
+			return 0;
+		case GREEN:
+			return 1;
+		case RED:
+			return 2;
+		case WHITE:
+			return 3;
+		case YELLOW:
+			return 4;
+		default:
+			return -1;
+		}
 	}
 
 }
