@@ -2,16 +2,10 @@
 **/*.class
 #ignore the model solution
 src/agents/ModelAgent*
-<<<<<<< HEAD
 #ignore the buildfile
 build.sh
 #ignore the doc
 doc/*
-=======
 .classpath
 .project
-<<<<<<< HEAD
->>>>>>> Update gitignore
-=======
 .vscode
->>>>>>> 11/10/2018 Commit
