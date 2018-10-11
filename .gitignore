@@ -10,4 +10,8 @@ doc/*
 =======
 .classpath
 .project
+<<<<<<< HEAD
 >>>>>>> Update gitignore
+=======
+.vscode
+>>>>>>> 11/10/2018 Commit
