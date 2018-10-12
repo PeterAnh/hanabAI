@@ -1,6 +1,13 @@
+/**
+ * CITS3001 Project: Implement an agent for the card game Hanabi
+ * The University of Western Australis
+ * @author Anh Tuan Hoang (Student ID: 27149914)
+ * @author Joshua Ng (Student ID: 20163079)
+ */
 package agents;
 
 import java.util.Stack;
+import java.util.Random;
 
 import hanabAI.Action;
 import hanabAI.ActionType;
@@ -10,6 +17,14 @@ import hanabAI.Colour;
 import hanabAI.IllegalActionException;
 import hanabAI.State;
 
+/**
+ * An implentation of Piers' agent for the Hanabi card game 
+ * from the paper "Evaluating and Modelling Hanabi-Playing Agents".
+ * Retrieved from: http://teaching.csse.uwa.edu.au/units/CITS3001/project/2018/papers/MCTSHanabi.pdf
+ * The University of Western Australia
+ * @author Anh Tuan Hoang (Student ID: 27149914)
+ * @author Joshua Ng (Student ID: 20163079)
+ */
 public class Agent21749914 implements Agent {
 	
 	private int numCardRemaining = 50;
@@ -29,8 +44,10 @@ public class Agent21749914 implements Agent {
 		return null;
 	}
 	
-	/*
-	 * From BasicAgent.java by Tim French
+	/** 
+	 * Idea from BasicAgent.java by Tim French.
+	 * Initialise our agent.
+	 * @param s the first state to initiliase our agent.
 	 */
 	public void init(State s)
 	{
@@ -79,6 +96,12 @@ public class Agent21749914 implements Agent {
 		firstAction = false;
 	}
 	
+	/**
+	 * Update the perspective of all the players,
+	 * aka what they know about their own hand.
+	 * @param s The current State.
+	 * @throws IllegalActionException
+	 */
 	public void updatePerspective(State s) throws IllegalActionException
 	{
 		State currentState = s;
@@ -97,9 +120,9 @@ public class Agent21749914 implements Agent {
 		}
 		
 		/*
-		*Traverse the stack to update the perspective of each agent 
-		*i.e. what each agent has known so far
-		*/
+		 * Traverse the stack to update the perspective of each agent 
+		 * i.e. what each agent has known so far
+		 */
 		while(!stack.isEmpty())
 		{
 			State temp = stack.pop();
@@ -185,10 +208,13 @@ public class Agent21749914 implements Agent {
 	
 
 	
-	/*
+	/**
 	 * playProbablySafeCard(Threshold [0, 1]): Plays the
 	 * card that is the most likely to be playable if it is at least
 	 * as probable as Threshold.
+	 * @param s The current State.
+	 * @param probability A card safe probability must be equal or higher than the threshold.
+	 * @return A PLAY action with a card that is probably safe to play or null if no such card is found.
 	 */
 	public Action playProbablySafeCard(State s, double probability) throws IllegalActionException
 	{
@@ -256,8 +282,11 @@ public class Agent21749914 implements Agent {
 		return null;
 	}
 	
-	/*
+	/**
 	 * Get a set of cards that are playable of the current state
+	 * @param s The current State.
+	 * @return An array of playable cards in the current state. 
+	 * A card with value 0 indicates the matching firework for it is completed.
 	 */
 	private Card[] getPlaybleCards(State s)
 	{
@@ -281,9 +310,14 @@ public class Agent21749914 implements Agent {
 		
 		return result;
 	}
-	/*
+	
+	/**
 	 * playSafeCard: Plays a card only if it is guaranteed 
-	 * that it is playable
+	 * that it is playable.
+	 * @param s The current state.
+	 * @return An action which plays a card that is guaranteed (100%) to be safe to play
+	 * or null if there is no card that 100% safe to play.
+	 * @throws IllegalActionException
 	 */
 	public Action playSafeCard (State s) throws IllegalActionException
 	{
@@ -315,12 +349,167 @@ public class Agent21749914 implements Agent {
 	
 		return null;
 	}
-	/*
+	
+	/**
 	 * tellAnyoneAboutUsefulCard: Tells the next player
 	 * with a useful card either the remaining unknown suit of
 	 * the card or the rank of the card.
+	 * @param s The current State.
+	 * @return A HINT_COLOUR or HINT_VALUE which would tell a player (who our agent determines to have useful card)
+	 * the colour or value of the useful card they have or null if no one has any useful card that we can give hint
+	 * or there is no hint token left.
+	 * @throws IllegalActionException
 	 */
 	public Action tellAnyoneAboutUsefulCard(State s) throws IllegalActionException
+	{
+		if(s.getHintTokens() > 0)
+		{
+			Card[] playableCards = getPlaybleCards(s);
+
+			for(int player =  s.getNextPlayer(); player != s.getObserver(); player = (player+1) % numPlayers)
+			{
+				Card[] playerHand = s.getHand(player);
+				boolean[] playerPlaybleCards = getPlayableHand(s, playableCards, player);
+
+				for(int card = 0; card < playerPlaybleCards.length; card++)
+				{
+					if(playerPlaybleCards[card])
+					{
+						int cardValue = history[player].cards[card].number;
+						Colour cardColour = history[player].cards[card].colour;
+						boolean numfound = cardValue != -1;
+						boolean colfound = cardColour != null;
+						if(numfound ^ colfound)
+						{
+							if(numfound)
+							{
+								return new Action(s.getObserver(),this.toString(),
+													ActionType.HINT_COLOUR,player,
+													getColourHint(playerHand,cardColour),cardColour);
+							} else {
+								return new Action(s.getObserver(),this.toString(),
+													ActionType.HINT_VALUE,player,
+													getNumberHint(playerHand,cardValue),cardValue);
+							}
+						}
+					}
+				}
+
+				for(int card = 0; card < playerPlaybleCards.length; card++)
+				{
+					if(playerPlaybleCards[card])
+					{
+						int cardValue = history[player].cards[card].number;
+						Colour cardColour = history[player].cards[card].colour;
+						boolean numfound = cardValue != -1;
+						boolean colfound = cardColour != null;
+						if(!numfound && !colfound)
+						{
+							int countNumber = 0;
+							int countColour = 0;
+							boolean[] colourhint = getColourHint(playerHand,cardColour);
+							boolean[] valuehint = getNumberHint(playerHand,cardValue);
+
+							for(int i = 0; i < colourhint.length; i++)
+							{
+								if(colourhint[i])
+								{
+									countColour++;
+								}
+								if(valuehint[i])
+								{
+									countNumber++;
+								}
+							}
+							if(countColour > countNumber)
+							{
+								return new Action(s.getObserver(),this.toString(),
+													ActionType.HINT_COLOUR,player,
+													getColourHint(playerHand,cardColour),cardColour);
+							} else {
+								return new Action(s.getObserver(),this.toString(),
+													ActionType.HINT_VALUE,player,
+													getNumberHint(playerHand,cardValue),cardValue);
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	//returns a boolean array indicating which cards are playable in the player hand
+	public boolean[] getPlayableHand(State s, Card[] playableCards, int player)
+	{
+		Card[] playerHand = s.getHand(player);
+		boolean[] playerPlaybleCards = new boolean[numCard];
+		for(int card = 0; card < playerHand.length; card++)
+		{
+			for(int pCard = 0; pCard < playableCards.length; pCard++)
+			{
+				if(playerHand[card].equals(playableCards[pCard]))
+				{
+					playerPlaybleCards[card] = true;
+				}
+			}
+		}
+		return playerPlaybleCards;
+	}
+
+	/**
+	 * Return an array of cards we are hinting about their colour.
+	 * @param cards The hand of the player our agent is giving hint to.
+	 * @param c The colour of the hint.
+	 * @return A boolean array which an element is set to true if the card is part of the hint.
+	 */
+	public boolean[] getColourHint(Card[] cards, Colour c)
+	{
+		boolean[] colourHints = new boolean[cards.length];
+
+		for(int i=0; i<cards.length; i++)
+		{
+			if(cards[i].getColour() == c)
+			{
+				colourHints[i] = true;
+			}
+		}
+		
+		return colourHints;
+	}
+
+	/**
+	 * Return an array of cards we are hinting about their number.
+	 * @param cards The hand of the player our agent is giving hint to.
+	 * @param n The number of the hint.
+	 * @return A boolean array which an element is set to true if the card is part of the hint.
+	 */
+	public boolean[] getNumberHint(Card[] cards, int n)
+	{
+		boolean[] numberHints = new boolean[cards.length];
+
+		for(int i=0; i<cards.length; i++)
+		{
+			if(cards[i].getValue() == n)
+			{
+				numberHints[i] = true;
+			}
+		}
+		
+		return numberHints;
+	}
+
+	/**
+	 *  TellDispensable: Tells the next player with an unknown
+	 *	dispensible card the information needed to correctly identify
+	 *	that the card is dispensible. This rule will only target
+	 *	cards that can be identified to the holder as dispensible
+	 *	with the addition of a single piece of information.
+	 * @param s The curent state.
+	 * @return A HINT_VALUE or HINT_COLOUR action or null if not possible.
+	 * @throws IllegalActionException
+	 */
+	public Action tellDispensible(State s) throws IllegalActionException
 	{
 		Card[] playableCards = getPlaybleCards(s);
 
@@ -403,124 +592,93 @@ public class Agent21749914 implements Agent {
 				}
 			}
 		}
-
-		return null;
-	}
-
-	public boolean[] getColourHint(Card[] cards, Colour c)
-	{
-		boolean[] colourHints = new boolean[cards.length];
-
-		for(int i=0; i<cards.length; i++)
-		{
-			if(cards[i].getColour() == c)
-			{
-				colourHints[i] = true;
-			}
-		}
-		
-		return colourHints;
-	}
-
-	public boolean[] getNumberHint(Card[] cards, int n)
-	{
-		boolean[] numberHints = new boolean[cards.length];
-
-		for(int i=0; i<cards.length; i++)
-		{
-			if(cards[i].getValue() == n)
-			{
-				numberHints[i] = true;
-			}
-		}
-		
-		return numberHints;
-	}
-
-
-	public Action tellDispensible(State s)
-	{
 		return null;
 	}
 	
-	/* 		
-	 *	osawaDiscard: Discards a card if it cannot be played at
-	 *	the end of the turn. This will discard cards that we know
-	 *	enough about to disqualify them from being playable. For
-	 *	example, a card with an unknown suit but a rank of 1 will
-	 *	not be playable if all the stacks have been started. This
-	 *	rule also considers cards that can not be played because
-	 *	their pre-requisite cards have already been discarded. 
+	/**
+	 * osawaDiscard: Discards a card if it cannot be played at
+	 * the end of the turn. This will discard cards that we know
+	 * enough about to disqualify them from being playable. For
+	 * example, a card with an unknown suit but a rank of 1 will
+	 * not be playable if all the stacks have been started. This
+	 * rule also considers cards that can not be played because
+	 * their pre-requisite cards have already been discarded.
+	 * @param s The current state.
+	 * @return An action which discards a card that is guaranteed to not be playable 
+	 * or null if there is not such card or there are still 8 hints token.
+	 * @throws IllegalActionException
 	 */
-	
 	public Action osawaDiscard(State s) throws IllegalActionException
 	{
-		int player = s.getObserver();
-
-		int minimumThrowableNumber = 9999;
-		boolean[] throwAbleColour = new boolean[colourArray.length];
-
-		for(int i = 0; i < colourArray.length; i++)
+		if(s.getHintTokens() != 8)
 		{
-			if(!s.getFirework(colourArray[i]).isEmpty())
-			{
-				Card currentCard = s.getFirework(colourArray[i]).peek();
-				if(minimumThrowableNumber > currentCard.getValue())
-				{
-					minimumThrowableNumber = currentCard.getValue();
-				}
-			} else {
-				minimumThrowableNumber = 0;
-			}
-		}
-		
-		for(int i = 0; i < colourArray.length; i++)
-		{
-			int value = 0;
-			if(!s.getFirework(colourArray[i]).isEmpty())
-			{
-				value = s.getFirework(colourArray[i]).peek().getValue();
-			}
-			if(value == 5 || history[player].deck[value][getColourIndex(colourArray[i])] == 0)
-			{
-				throwAbleColour[getColourIndex(colourArray[i])] = true;
-			}
-		}
+			int player = s.getObserver();
 
-		for(int i = 0; i < history[player].cards.length; i++)
-		{
-			int cardValue = history[player].cards[i].number;
-			Colour cardColour = history[player].cards[i].colour;
+			int minimumThrowableNumber = 9999;
+			boolean[] throwAbleColour = new boolean[colourArray.length];
 
-			if(cardValue != -1)
+			for(int i = 0; i < colourArray.length; i++)
 			{
-				if(cardValue < minimumThrowableNumber)
+				if(!s.getFirework(colourArray[i]).isEmpty())
 				{
-					return new Action(player, this.toString(), ActionType.DISCARD, i);
+					Card currentCard = s.getFirework(colourArray[i]).peek();
+					if(minimumThrowableNumber > currentCard.getValue())
+					{
+						minimumThrowableNumber = currentCard.getValue();
+					}
+				} else {
+					minimumThrowableNumber = 0;
 				}
-			} else if(cardColour != null)
-			{
-				int colourIndex = getColourIndex(cardColour);
-				if(throwAbleColour[colourIndex])
-				{
-					return new Action(player, this.toString(), ActionType.DISCARD, i);
-				}
-			} else 
+			}
+			
+			for(int i = 0; i < colourArray.length; i++)
 			{
 				int value = 0;
-				if(!s.getFirework(cardColour).isEmpty())
+				if(!s.getFirework(colourArray[i]).isEmpty())
 				{
-					value = s.getFirework(cardColour).peek().getValue();
+					value = s.getFirework(colourArray[i]).peek().getValue();
 				}
-				if(cardValue <= value)
+				if(value == 5 || history[player].deck[value][getColourIndex(colourArray[i])] == 0)
 				{
-					return new Action(player, this.toString(), ActionType.DISCARD, i);
-				} else {
-					for(int j = value+1; j < cardValue; j++)
+					throwAbleColour[getColourIndex(colourArray[i])] = true;
+				}
+			}
+
+			for(int i = 0; i < history[player].cards.length; i++)
+			{
+				int cardValue = history[player].cards[i].number;
+				Colour cardColour = history[player].cards[i].colour;
+
+				if(cardValue != -1)
+				{
+					if(cardValue < minimumThrowableNumber)
 					{
-						if(history[player].deck[j][getColourIndex(cardColour)] == 0)
+						return new Action(player, this.toString(), ActionType.DISCARD, i);
+					}
+				} else if(cardColour != null)
+				{
+					int colourIndex = getColourIndex(cardColour);
+					if(throwAbleColour[colourIndex])
+					{
+						return new Action(player, this.toString(), ActionType.DISCARD, i);
+					}
+				} else 
+				{
+					int value = 0;
+					if(!s.getFirework(cardColour).isEmpty())
+					{
+						value = s.getFirework(cardColour).peek().getValue();
+					}
+					if(cardValue <= value)
+					{
+						return new Action(player, this.toString(), ActionType.DISCARD, i);
+					} else {
+						for(int j = value+1; j < cardValue; j++)
 						{
-							return new Action(player, this.toString(), ActionType.DISCARD, i);
+							if(history[player].deck[j][getColourIndex(cardColour)] == 0)
+							{
+								return new Action(player, this.toString(), ActionType.DISCARD, i);
+							}
 						}
 					}
 				}
@@ -533,30 +691,60 @@ public class Agent21749914 implements Agent {
 	{
 		return null;
 	}
-	
+	/**
+	 * tellRandomly: Tells the next player a random fact about any card in their hand.
+	 * @param s The current State.
+	 * @return A HINT_VALUE or HINT_COLOUR action or null if there is no hint token left.
+	 */
 	public Action tellRandomly(State s)
 	{
+		if(s.getHintTokens() > 0)
+		{
+			
+		}
 		return null;
 	}
 	
-	public Action discardRandomly(State s)
+	/**
+	 * discardRandomly: Randomly discards a card from the hand.
+	 * Idea from BasicAgent.Java by Tim French.
+	 * @param s The current State.
+	 * @return An action which discards a card randomly or null if there are still 8 hints token.
+	 * @throws IllegalActionException
+	 */
+	public Action discardRandomly(State s) throws IllegalActionException
 	{
+		if(s.getHintTokens() != 8)
+		{
+			Random rand = new Random();
+			int cardIndex = rand.nextInt(numCard);
+			history[s.getObserver()].cards[cardIndex].reset();
+			return new Action(s.getObserver(), toString(), ActionType.DISCARD, cardIndex);
+		}
 		return null;
 	}
 	
+	/**
+	 * Return agent's name.
+	 * @return My agent name (Tuturu!).
+	 */
 	public String toString() 
 	{
 		return "トゥットゥルー♪"; //Tuturu ~♪
 	}
 	
-	/*
-	 * Store the perspective of what each player knows about their card
+	/**
+	 * Store the perspective of what each player knows about their card.
 	 */
 	class Perspective 
 	{
 		private CardHistory[] cards;
 		private int[][] deck;
 		
+		/**
+		 * Constructor for Perspective.
+		 * @param n The number of cards in a player hand.
+		 */
 		public Perspective(int n)
 		{
 			cards = new CardHistory[n];
@@ -595,19 +783,21 @@ public class Agent21749914 implements Agent {
 		}
 	}
 	
-	/*
-	 * Store the probability what a card could be
+	/**
+	 * Store the probability what a card could be.
 	 */
 	class CardHistory 
 	{
-		//change the cardhistory to 2-d boolean
 		private int[][] notCard;
 		private int[][] deck;
 		private int number;
 		private Colour colour;		
 		private boolean[] notNumber;
 		private boolean[] notColour;
-		
+		/**
+		 * Constructor for card history
+		 * @param d the deck of card to initialise
+		 */	
 		public CardHistory(int[][] d)
 		{			
 			deck = d;
@@ -636,6 +826,10 @@ public class Agent21749914 implements Agent {
 			notColour = new boolean[5];			
 		}
 		
+		/**
+		 * Reset what player knows about card.
+		 * This occurs when the card is played or discarded.
+		 */
 		public void reset()
 		{
 			for(int row = 0; row < deck.length; row++)
@@ -651,6 +845,10 @@ public class Agent21749914 implements Agent {
 			notColour = new boolean[5];			
 		}
 		
+		/**
+		 * Update the colour that a card cannot be.
+		 * @param c the colour the card cannot be.
+		 */
 		public void updateNotColour(Colour c)
 		{
 			int column = getColourIndex(c);
@@ -680,6 +878,10 @@ public class Agent21749914 implements Agent {
 			}									
 		}
 		
+		/**
+		 * Update all the colours the card cannot be.
+		 * @param c the colour of the card.
+		 */
 		public void updateColour(Colour c)
 		{
 			colour = c;
@@ -744,7 +946,11 @@ public class Agent21749914 implements Agent {
 		}
 		
 	}
-	
+	/**
+	 * Return index of a color (in this agent)
+	 * @param c the colour that we need its index
+	 * @return
+	 */
 	private int getColourIndex(Colour c) {
 		switch (c) {
 		case BLUE:
