@@ -364,79 +364,113 @@ public class Agent21749914 implements Agent {
 	{
 		if(s.getHintTokens() > 0)
 		{
-			Card[] playableCards = getPlaybleCards(s);
+			return null;
+		}
+		Card[] playableCards = getPlaybleCards(s);
 
-			for(int player =  s.getNextPlayer(); player != s.getObserver(); player = (player+1) % numPlayers)
+		for(int player =  s.getNextPlayer(); player != s.getObserver(); player = (player+1) % numPlayers)
+		{
+			Card[] playerHand = s.getHand(player);
+			CardHistory[] playerHistory = history[player].cards;
+			
+			int maxHints = 0;
+			int maxCard = 0;
+			ActionType type = ActionType.PLAY;
+			boolean halfKnownCardFound = false;
+			for(int card=0; card<playerHand.length; card++)
 			{
-				Card[] playerHand = s.getHand(player);
-				boolean[] playerPlaybleCards = getPlayableHand(s, playableCards, player);
-
-				for(int card = 0; card < playerPlaybleCards.length; card++)
+				if(!isCardPlayable(playableCards, playerHand[card]) || playerHistory[card].isCardKnown())
 				{
-					if(playerPlaybleCards[card])
+					continue;
+				} 
+				if(!playerHistory[card].isCardUnknown())
+				{
+					halfKnownCardFound = true;
+				}
+				if(playerHistory[card].isNumberKnown() || !halfKnownCardFound)
+				{
+					int numHints = newHintsGiven(s, player, ActionType.HINT_COLOUR, getColourIndex(playerHand[card].getColour()));
+					if(numHints > maxHints)
 					{
-						int cardValue = history[player].cards[card].number;
-						Colour cardColour = history[player].cards[card].colour;
-						boolean numfound = cardValue != -1;
-						boolean colfound = cardColour != null;
-						if(numfound ^ colfound)
-						{
-							if(numfound)
-							{
-								return new Action(s.getObserver(),this.toString(),
-													ActionType.HINT_COLOUR,player,
-													getColourHint(playerHand,cardColour),cardColour);
-							} else {
-								return new Action(s.getObserver(),this.toString(),
-													ActionType.HINT_VALUE,player,
-													getNumberHint(playerHand,cardValue),cardValue);
-							}
-						}
+						maxHints = numHints;
+						maxCard = card;
+						type = ActionType.HINT_COLOUR;
 					}
 				}
-
-				for(int card = 0; card < playerPlaybleCards.length; card++)
+				if(playerHistory[card].isColourKnown() || !halfKnownCardFound)
 				{
-					if(playerPlaybleCards[card])
+					int numHints = newHintsGiven(s, player, ActionType.HINT_VALUE, playerHand[card].getValue());
+					if(numHints > maxHints)
 					{
-						int cardValue = history[player].cards[card].number;
-						Colour cardColour = history[player].cards[card].colour;
-						boolean numfound = cardValue != -1;
-						boolean colfound = cardColour != null;
-						if(!numfound && !colfound)
-						{
-							int countNumber = 0;
-							int countColour = 0;
-							boolean[] colourhint = getColourHint(playerHand,cardColour);
-							boolean[] valuehint = getNumberHint(playerHand,cardValue);
-
-							for(int i = 0; i < colourhint.length; i++)
-							{
-								if(colourhint[i])
-								{
-									countColour++;
-								}
-								if(valuehint[i])
-								{
-									countNumber++;
-								}
-							}
-							if(countColour > countNumber)
-							{
-								return new Action(s.getObserver(),this.toString(),
-													ActionType.HINT_COLOUR,player,
-													getColourHint(playerHand,cardColour),cardColour);
-							} else {
-								return new Action(s.getObserver(),this.toString(),
-													ActionType.HINT_VALUE,player,
-													getNumberHint(playerHand,cardValue),cardValue);
-							}
-						}
+						maxHints = numHints;
+						maxCard = card;
+						type = ActionType.HINT_VALUE;
 					}
 				}
 			}
-		}
+
+			if(maxHints > 0)
+			{
+				switch(type){
+					case HINT_VALUE:
+						return new Action(s.getObserver(),this.toString(),
+							ActionType.HINT_VALUE,player,
+							getNumberHint(playerHand,playerHand[maxCard].getValue()),playerHand[maxCard].getValue());
+					case HINT_COLOUR:
+						return new Action(s.getObserver(),this.toString(),
+							ActionType.HINT_COLOUR,player,
+							getColourHint(playerHand,playerHand[maxCard].getColour()),playerHand[maxCard].getColour());
+					default:
+				}
+			}
+		}	
 		return null;
+	}
+
+	//returns the number new hints in a player's card history given for a specific question
+	public int newHintsGiven(State s, int player, ActionType type, int value)
+	{
+		Card[] playerhand = s.getHand(player);
+		CardHistory[] playerCardHisotry = history[player].cards;
+		int count = 0;
+		switch(type)
+		{
+			case HINT_VALUE:
+				for(int i=0; i<playerCardHisotry.length; i++)
+				{
+					if(!playerCardHisotry[i].isNumberKnown() && playerhand[i].getValue()==value)
+					{
+						count++;
+					}
+				}
+				break;
+			case HINT_COLOUR:
+				Colour colour = colourArray[value];
+				for(int i=0; i<playerCardHisotry.length; i++)
+				{
+					if(!playerCardHisotry[i].isColourKnown() && playerhand[i].getColour().equals(colour))
+					{
+						count++;
+					}
+				}
+				break;
+			default:
+		}
+		return count;
+	}
+
+	
+	//returns if card is playable
+	public boolean isCardPlayable(Card[] playableCards, Card card) 
+	{
+		for(int i=0; i<playableCards.length; i++)
+		{
+			if(card.equals(playableCards[i]))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	//returns a boolean array indicating which cards are playable in the player hand
@@ -510,89 +544,112 @@ public class Agent21749914 implements Agent {
 	 * @throws IllegalActionException
 	 */
 	public Action tellDispensible(State s) throws IllegalActionException
-	{
-		Card[] playableCards = getPlaybleCards(s);
+	{		
+		int minimumThrowableNumber = getMinimumThrowableNumber(s);
+			
+		boolean[] throwAbleColour =  noLongerPlayableColours(s);
 
 		for(int player =  s.getNextPlayer(); player != s.getObserver(); player = (player+1) % numPlayers)
 		{
 			Card[] playerHand = s.getHand(player);
-			boolean[] playerPlaybleCards = new boolean[numCard];
+			
+			int maxHints = 0;
+			int maxCard = 0;
+			ActionType type = ActionType.PLAY;
 			for(int card = 0; card < playerHand.length; card++)
 			{
-				for(int pCard = 0; pCard < playableCards.length; pCard++)
-				{
-					if(playerHand[card].equals(playableCards[pCard]))
-					{
-						playerPlaybleCards[card] = true;
-					}
-				}
-			}
+				CardHistory cardhistory = history[player].cards[card];
 
-			for(int card = 0; card < playerPlaybleCards.length; card++)
-			{
-				if(playerPlaybleCards[card])
+				if(cardhistory.isCardKnown() || cardhistory.isCardUnknown())
 				{
-					int cardValue = history[player].cards[card].number;
-					Colour cardColour = history[player].cards[card].colour;
-					boolean numfound = cardValue != -1;
-					boolean colfound = cardColour != null;
-					if(numfound ^ colfound)
+					continue;
+				} 
+				if(cardhistory.isNumberKnown())
+				{
+					if(cardhistory.number < minimumThrowableNumber)
 					{
-						if(numfound)
+						int numHints = newHintsGiven(s, player, ActionType.HINT_COLOUR, getColourIndex(playerHand[card].getColour()));
+						if(numHints > maxHints)
 						{
-							return new Action(s.getObserver(),this.toString(),
-												ActionType.HINT_COLOUR,player,
-												getColourHint(playerHand,cardColour),cardColour);
-						} else {
-							return new Action(s.getObserver(),this.toString(),
-												ActionType.HINT_VALUE,player,
-												getNumberHint(playerHand,cardValue),cardValue);
+							maxHints = numHints;
+							maxCard = card;
+							type = ActionType.HINT_COLOUR;
+						}
+					}
+				} 
+				if(cardhistory.isColourKnown())
+				{
+					int colourIndex = getColourIndex(cardhistory.colour);
+					if(throwAbleColour[colourIndex])
+					{
+						int numHints = newHintsGiven(s, player, ActionType.HINT_VALUE, playerHand[card].getValue());
+						if(numHints > maxHints)
+						{
+							maxHints = numHints;
+							maxCard = card;
+							type = ActionType.HINT_VALUE;
 						}
 					}
 				}
 			}
 
-			for(int card = 0; card < playerPlaybleCards.length; card++)
+			if(maxHints > 0)
 			{
-				if(playerPlaybleCards[card])
-				{
-					int cardValue = history[player].cards[card].number;
-					Colour cardColour = history[player].cards[card].colour;
-					boolean numfound = cardValue != -1;
-					boolean colfound = cardColour != null;
-					if(!numfound && !colfound)
-					{
-						int countNumber = 0;
-						int countColour = 0;
-						boolean[] colourhint = getColourHint(playerHand,cardColour);
-						boolean[] valuehint = getNumberHint(playerHand,cardValue);
-
-						for(int i = 0; i < colourhint.length; i++)
-						{
-							if(colourhint[i])
-							{
-								countColour++;
-							}
-							if(valuehint[i])
-							{
-								countNumber++;
-							}
-						}
-						if(countColour > countNumber)
-						{
-							return new Action(s.getObserver(),this.toString(),
-												ActionType.HINT_COLOUR,player,
-												getColourHint(playerHand,cardColour),cardColour);
-						} else {
-							return new Action(s.getObserver(),this.toString(),
-												ActionType.HINT_VALUE,player,
-												getNumberHint(playerHand,cardValue),cardValue);
-						}
-					}
+				switch(type){
+					case HINT_VALUE:
+						return new Action(s.getObserver(),this.toString(),
+							ActionType.HINT_VALUE,player,
+							getNumberHint(playerHand,playerHand[maxCard].getValue()),playerHand[maxCard].getValue());
+					case HINT_COLOUR:
+						return new Action(s.getObserver(),this.toString(),
+							ActionType.HINT_COLOUR,player,
+							getColourHint(playerHand,playerHand[maxCard].getColour()),playerHand[maxCard].getColour());
+					default:
 				}
 			}
 		}
 		return null;
+	}
+
+
+
+	//returns the number which any card can be safely discarded if equal to or below the number
+	public int getMinimumThrowableNumber(State s)
+	{
+		int value = 9999;
+		for(int i = 0; i < colourArray.length; i++)
+		{
+			if(!s.getFirework(colourArray[i]).isEmpty())
+			{
+				Card currentCard = s.getFirework(colourArray[i]).peek();
+				if(value > currentCard.getValue())
+				{
+					value = currentCard.getValue();
+				}
+			} else {
+				value = 0;
+			}
+		}
+		return value;
+	}
+
+	//returns an boolean array identifying which colours are still playable
+	public boolean[] noLongerPlayableColours(State s) 
+	{
+		boolean[] throwAbleColour = new boolean[colourArray.length];
+		for(int i = 0; i < colourArray.length; i++)
+		{
+			int value = 0;
+			if(!s.getFirework(colourArray[i]).isEmpty())
+			{
+				value = s.getFirework(colourArray[i]).peek().getValue();
+			}
+			if(value == 5 || history[s.getObserver()].deck[value][getColourIndex(colourArray[i])] == 0)
+			{
+				throwAbleColour[getColourIndex(colourArray[i])] = true;
+			}
+		}
+		return throwAbleColour;
 	}
 	
 	/**
@@ -614,77 +671,57 @@ public class Agent21749914 implements Agent {
 		{
 			int player = s.getObserver();
 
-			int minimumThrowableNumber = 9999;
-			boolean[] throwAbleColour = new boolean[colourArray.length];
-
-			for(int i = 0; i < colourArray.length; i++)
-			{
-				if(!s.getFirework(colourArray[i]).isEmpty())
-				{
-					Card currentCard = s.getFirework(colourArray[i]).peek();
-					if(minimumThrowableNumber > currentCard.getValue())
-					{
-						minimumThrowableNumber = currentCard.getValue();
-					}
-				} else {
-					minimumThrowableNumber = 0;
-				}
-			}
+			int minimumThrowableNumber = getMinimumThrowableNumber(s);
 			
-			for(int i = 0; i < colourArray.length; i++)
-			{
-				int value = 0;
-				if(!s.getFirework(colourArray[i]).isEmpty())
-				{
-					value = s.getFirework(colourArray[i]).peek().getValue();
-				}
-				if(value == 5 || history[player].deck[value][getColourIndex(colourArray[i])] == 0)
-				{
-					throwAbleColour[getColourIndex(colourArray[i])] = true;
-				}
-			}
+			boolean[] throwAbleColour =  noLongerPlayableColours(s);
 
 			for(int i = 0; i < history[player].cards.length; i++)
 			{
-				int cardValue = history[player].cards[i].number;
-				Colour cardColour = history[player].cards[i].colour;
+				CardHistory cardhistory = history[player].cards[i];
 
-				if(cardValue != -1)
-				{
-					if(cardValue < minimumThrowableNumber)
-					{
-						return new Action(player, this.toString(), ActionType.DISCARD, i);
-					}
-				} else if(cardColour != null)
-				{
-					int colourIndex = getColourIndex(cardColour);
-					if(throwAbleColour[colourIndex])
-					{
-						return new Action(player, this.toString(), ActionType.DISCARD, i);
-					}
-				} else 
+				if(cardhistory.isCardKnown())
 				{
 					int value = 0;
-					if(!s.getFirework(cardColour).isEmpty())
+					if(!s.getFirework(cardhistory.colour).isEmpty())
 					{
-						value = s.getFirework(cardColour).peek().getValue();
+						value = s.getFirework(cardhistory.colour).peek().getValue();
 					}
-					if(cardValue <= value)
+					if(cardhistory.number < value || isCardDisconnected(value,cardhistory,player))
 					{
 						return new Action(player, this.toString(), ActionType.DISCARD, i);
-					} else {
-						for(int j = value+1; j < cardValue; j++)
+					}
+				} else {
+					if(cardhistory.isNumberKnown())
+					{
+						if(cardhistory.number < minimumThrowableNumber)
 						{
-							if(history[player].deck[j][getColourIndex(cardColour)] == 0)
-							{
-								return new Action(player, this.toString(), ActionType.DISCARD, i);
-							}
+							return new Action(player, this.toString(), ActionType.DISCARD, i);
+						}
+					} 
+					if(cardhistory.isColourKnown())
+					{
+						int colourIndex = getColourIndex(cardhistory.colour);
+						if(throwAbleColour[colourIndex])
+						{
+							return new Action(player, this.toString(), ActionType.DISCARD, i);
 						}
 					}
 				}
 			}
 		}
 		return null;
+	}
+
+	//returns true if the card is dead because connecting cards have been discarded.
+	public boolean isCardDisconnected(int fireWorkValue, CardHistory cardhistory, int player) {
+		for(int j = fireWorkValue+1; j < cardhistory.number; j++)
+		{
+			if(history[player].deck[j][getColourIndex(cardhistory.colour)] == 0)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public Action discardOldestFirst(State s)
@@ -825,7 +862,32 @@ public class Agent21749914 implements Agent {
 			notNumber = new boolean[5];
 			notColour = new boolean[5];			
 		}
+
+		//returns if the colour is known
+		public boolean isNumberKnown()
+		{
+			return number == -1;
+		}
+
+		//returns if the colour is known
+		public boolean isColourKnown()
+		{
+			return colour == null;
+		}
+
 		
+		//returns if card is known
+		public boolean isCardKnown()
+		{
+			return isColourKnown() && isNumberKnown();
+		}
+		
+		//returns if card is unknown
+		public boolean isCardUnknown()
+		{
+			return !isColourKnown() && !isNumberKnown();
+		}
+
 		/**
 		 * Reset what player knows about card.
 		 * This occurs when the card is played or discarded.
