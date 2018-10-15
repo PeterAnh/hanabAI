@@ -84,7 +84,7 @@ public class State implements Cloneable{
          s.fuse--;
        }
        if(!deck.isEmpty()) s.hands[action.getPlayer()][action.getCard()] = deck.pop();
-       if(deck.isEmpty()){
+       else{
         if(finalAction==-1) s.finalAction = order+players.length;
         s.hands[action.getPlayer()][action.getCard()] = null;
        }
@@ -93,7 +93,7 @@ public class State implements Cloneable{
        c = hands[action.getPlayer()][action.getCard()];
        s.discards.push(c);
        if(!deck.isEmpty()) s.hands[action.getPlayer()][action.getCard()] = deck.pop();
-       if(deck.isEmpty()){
+       else{
         if(finalAction==-1) s.finalAction = order+players.length;
         s.hands[action.getPlayer()][action.getCard()] = null;
        }
@@ -230,7 +230,7 @@ public class State implements Cloneable{
    * */
   public Card previousCardPlayed(){
     try{
-      return previousState.getHand(previousAction.getPlayer())[previousAction.getCard()];
+      return previousState.hands[previousAction.getPlayer()][previousAction.getCard()];
     }
     catch(Exception e){return null;}
   }
