@@ -27,7 +27,6 @@ import hanabAI.State;
  */
 public class Agent21749914 implements Agent {
 	
-	private int numCardRemaining = 50;
 	private int numPlayers;
 	private Perspective[] history;
 	private int numCard;
@@ -153,7 +152,6 @@ public class Agent21749914 implements Agent {
 					//update player's hand
 					history[player].cards[cardIndex].reset();
 					history[player].updateHandNotCard(v-1, colourIndex);
-					numCardRemaining--;
 					
 					//update other players so they know they don't have what was just drawn
 					if(temp.getHand(player)[cardIndex] != null)
@@ -203,7 +201,12 @@ public class Agent21749914 implements Agent {
 					}
 					break;
 			}
+			for(Perspective p : history)
+			{
+				p.updateNumTurn();
+			}
 		}
+		
 	}
 	
 
@@ -724,8 +727,24 @@ public class Agent21749914 implements Agent {
 		return false;
 	}
 	
-	public Action discardOldestFirst(State s)
+	/**
+	 * discardOldestFirst: Discards the card that has been held
+	 * in the hand the longest amount of time.
+	 * @param s the current State
+	 * @return An action which discards a card that has been held for the longest amount of time or null if not possible.
+	 * @throws IllegalActionException
+	 */
+	public Action discardOldestFirst(State s) throws IllegalActionException
 	{
+		int player = s.getObserver();
+		for(int i = 0; i < numCard; i++)
+		{
+			CardHistory card = history[player].cards[i];
+			if(card.turn > 5)
+			{
+				return new Action(player, this.toString(), ActionType.DISCARD, i);
+			}
+		}
 		return null;
 	}
 	/**
@@ -810,6 +829,14 @@ public class Agent21749914 implements Agent {
 			}
 		}
 
+		public void updateNumTurn() 
+		{
+			for(int i = 0; i < cards.length; i++)
+			{
+				cards[i].turn++;
+			}
+		}
+
 		public void updateHandNotCard(int valueIndex, int colorIndex)
 		{
 			this.deck[valueIndex][colorIndex]--;
@@ -831,6 +858,7 @@ public class Agent21749914 implements Agent {
 		private Colour colour;		
 		private boolean[] notNumber;
 		private boolean[] notColour;
+		private int turn;
 		/**
 		 * Constructor for card history
 		 * @param d the deck of card to initialise
@@ -859,8 +887,9 @@ public class Agent21749914 implements Agent {
 			}
 			this.number = -1;
 			this.colour = null;
+			this.turn = 1;
 			notNumber = new boolean[5];
-			notColour = new boolean[5];			
+			notColour = new boolean[5];	
 		}
 
 		//returns if the colour is known
@@ -903,6 +932,7 @@ public class Agent21749914 implements Agent {
 			}
 			number = -1;
 			colour = null;
+			turn = 0;
 			notNumber = new boolean[5];
 			notColour = new boolean[5];			
 		}
@@ -1009,9 +1039,9 @@ public class Agent21749914 implements Agent {
 		
 	}
 	/**
-	 * Return index of a color (in this agent)
+	 * Return index of a colour (in this agent)
 	 * @param c the colour that we need its index
-	 * @return
+	 * @return index of a colour (-1 if no colour is found)
 	 */
 	private int getColourIndex(Colour c) {
 		switch (c) {
