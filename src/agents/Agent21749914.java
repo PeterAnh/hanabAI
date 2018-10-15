@@ -179,9 +179,9 @@ public class Agent21749914 implements Agent {
 						if(previous.getHintedCards()[i])
 						{
 							history[receiver].cards[i].colour = c;
-							history[receiver].cards[i].updateColour(c);
+							history[receiver].cards[i].setColour(c);
 						} else {
-							history[receiver].cards[i].updateNotColour(c);
+							history[receiver].cards[i].setNotColour(c);
 						}
 					}
 					break;
@@ -194,9 +194,9 @@ public class Agent21749914 implements Agent {
 						if(previous.getHintedCards()[i])
 						{
 							history[receiver].cards[i].number = v;
-							history[receiver].cards[i].updateValue(v);
+							history[receiver].cards[i].setValue(v);
 						} else {
-							history[receiver].cards[i].updateNotValue(v);
+							history[receiver].cards[i].setNotValue(v);
 						}
 					}
 					break;
@@ -837,12 +837,19 @@ public class Agent21749914 implements Agent {
 			}
 		}
 
-		public void updateHandNotCard(int valueIndex, int colorIndex)
+		public void updateHandNotCard(int valueIndex, int colourIndex)
 		{
-			this.deck[valueIndex][colorIndex]--;
+			this.deck[valueIndex][colourIndex]--;
 			for(int i=0; i<cards.length; i++)
 			{
-				cards[i].notCard[valueIndex][colorIndex]--;
+				cards[i].notCard[valueIndex][colourIndex]--;
+				if(cards[i].notCard[valueIndex][colourIndex] == 0)
+				{
+					cards[i].updateNotNumber(valueIndex);
+					cards[i].updateNotColour(colourIndex);
+					cards[i].checkIfNumberIsKnown();
+					cards[i].checkIfColourIsKnown();
+				}
 			}
 		}
 	}
@@ -933,29 +940,103 @@ public class Agent21749914 implements Agent {
 			number = -1;
 			colour = null;
 			turn = 0;
+
 			notNumber = new boolean[5];
-			notColour = new boolean[5];			
+			notColour = new boolean[5];
+			updateNotNumberArray();
+			updateNotColourArray();
+		}
+
+		//updates the notNumber boolean array.
+		public void updateNotNumberArray()
+		{
+			for(int row=0; row<notCard.length; row++)
+			{
+				updateNotNumber(row);
+			}
+			checkIfNumberIsKnown();
+		}
+		
+		//updates notNumber if it cannot be a particular number.
+		public void updateNotNumber(int num)
+		{
+			if(notNumber[num])
+			{
+				return;
+			}
+			int count = 0;
+			for(int col=0; col<notCard[0].length; col++)
+			{
+				if(notCard[num][col] != 0)
+				{
+					break;
+				}
+				count++;
+			}
+			if(count == 5)
+			{
+				notNumber[num] = true;
+			}
+		}
+
+		//updates the notColour boolean array
+		public void updateNotColourArray()
+		{
+			for(int col=0; col<notCard[0].length; col++)
+			{
+				updateNotColour(col);
+			}
+			checkIfColourIsKnown();
+		}
+		
+		//updates notColour if it cannot be a particular colour.
+		public void updateNotColour(int colour)
+		{
+			if(notColour[colour])
+			{
+				return;
+			}
+
+			int count = 0;
+			for(int row=0; row<notCard.length; row++)
+			{
+				if(notCard[row][colour] != 0)
+				{
+					break;
+				}
+				count++;
+			}
+			if(count == 5)
+			{
+				notColour[colour] = true;
+			}
 		}
 		
 		/**
 		 * Update the colour that a card cannot be.
 		 * @param c the colour the card cannot be.
 		 */
-		public void updateNotColour(Colour c)
+		public void setNotColour(Colour c)
 		{
 			int column = getColourIndex(c);
 			for(int i = 0; i < notCard.length; i++)
 			{
 				notCard[i][column] = 0;
 			}
+			notColour[column] = true;
+			updateNotNumberArray();
+			checkIfColourIsKnown();								
+		}
 
-			//check if there are enough hints to guess colour
+		//check if there are enough hints to guess colour
+		public void checkIfColourIsKnown()
+		{
 			if(colour != null)
 			{
 				return;
 			}
-			notColour[column] = true;
 			int count = 0;
+			int column =0;
 			for(int i=0; i<notColour.length; i++)
 			{
 				if(!notColour[i])
@@ -967,14 +1048,10 @@ public class Agent21749914 implements Agent {
 			if(count == 1)
 			{
 				colour = colourArray[column];
-			}									
+			}	
 		}
 		
-		/**
-		 * Update all the colours the card cannot be.
-		 * @param c the colour of the card.
-		 */
-		public void updateColour(Colour c)
+		public void setColour(Colour c)
 		{
 			colour = c;
 			int column = getColourIndex(c);
@@ -982,30 +1059,46 @@ public class Agent21749914 implements Agent {
 			{
 				if(i == column)
 				{
-					continue;
-				}
-				for(int j = 0; j < notCard.length; j++)
-				{
-					notCard[j][i] = 0;
+					//updates notNumber
+					for(int j=0; j < notCard.length; j++)
+					{
+						if(notCard[j][column] == 0)
+						{
+							notNumber[j] = true;
+						}
+					}
+				} else {
+					//sets other possible colours to zero
+					for(int j = 0; j < notCard.length; j++)
+					{
+						notCard[j][i] = 0;
+					}
 				}
 			}
+			checkIfNumberIsKnown();
 		}
 		
-		public void updateNotValue(int v)
+		public void setNotValue(int v)
 		{
 			int row = v-1;
 			for(int i = 0; i < notCard.length; i++)
 			{
 				notCard[row][i] = 0;
 			}
+			notNumber[row] = true;
+			updateNotColourArray();
+			checkIfNumberIsKnown();
+		}
 
-			//check if there are enought hints to guess the number
+		//check if there are enought hints to guess the number
+		public void checkIfNumberIsKnown()
+		{
 			if(number != -1)
 			{
 				return;
 			}
-			notNumber[row] = true;
 			int count = 0;
+			int row = 0;
 			for(int i=0; i<notNumber.length; i++)
 			{
 				if(!notNumber[i])
@@ -1020,7 +1113,7 @@ public class Agent21749914 implements Agent {
 			}
 		}
 		
-		public void updateValue(int v)
+		public void setValue(int v)
 		{
 			number = v;
 			int row = v-1;
@@ -1028,16 +1121,26 @@ public class Agent21749914 implements Agent {
 			{
 				if(i == row)
 				{
-					continue;
-				}
-				for(int j = 0; j < notCard.length; j++)
-				{
-					notCard[i][j] = 0;
+					//update notColour
+					for(int j = 0; j < notCard.length; j++)
+					{
+						if(notCard[row][j] == 0)
+						{
+							notColour[j] = true;
+						}
+					}
+				} else {
+					//set all other card numbers to 0;
+					for(int j = 0; j < notCard.length; j++)
+					{
+						notCard[i][j] = 0;
+					}
 				}
 			}
-		}
-		
+			checkIfColourIsKnown();
+		}		
 	}
+
 	/**
 	 * Return index of a colour (in this agent)
 	 * @param c the colour that we need its index
