@@ -7,6 +7,9 @@
 package agents;
 
 import java.util.Stack;
+
+import javax.management.RuntimeErrorException;
+
 import java.util.Random;
 
 import hanabAI.Action;
@@ -32,16 +35,78 @@ public class Agent21749914 implements Agent {
 	private int numCard;
 	private boolean firstAction = true;
 	private int agentIndex;
+	private int numCardRemaining = 50;
 	private Colour[] colourArray = new Colour[]{Colour.BLUE, Colour.GREEN, Colour.RED, Colour.WHITE, Colour.YELLOW};
 	
 	@Override
-	public Action doAction(State s) 
+	public Action doAction(State s)
 	{
+		Action a = null;
+		int fuseTokens = s.getFuseTokens();
+		int hintTokens = s.getHintTokens();
 		if(firstAction)
 		{
 			init(s);
 		}
-		return null;
+		try{
+			updatePerspective(s);
+
+			if(fuseTokens > 1 && numCardRemaining == 0)
+			{
+				a = playProbablySafeCard(s, 0.0);
+				if(a!=null) return a;
+			}
+
+			a = playSafeCard(s);
+			if(a != null) return a;
+
+			if(fuseTokens > 1)
+			{
+				a = playProbablySafeCard(s, 0.6);
+				if(a != null) return a;
+			}
+
+			if(hintTokens > 0)
+			{
+				a = tellAnyoneAboutUsefulCard(s);
+				if(a != null) return a;
+			}
+
+			if(hintTokens > 0 && hintTokens < 4)
+			{
+				a = tellDispensible(s);
+				if(a != null) return a;
+			}
+
+			if(hintTokens < 8)
+			{
+				a = osawaDiscard(s);
+				if(a != null) return a;
+			}
+
+			if(hintTokens < 8)
+			{
+				a = discardOldestFirst(s);
+				if(a != null) return a;
+			}
+
+			if(hintTokens > 0)
+			{
+				a = tellRandomly(s);
+				if(a != null) return a;
+			}
+
+			if(hintTokens < 8)
+			{
+				a = discardRandomly(s);
+				if(a != null) return a;
+			}
+			return a;
+		}
+		catch (IllegalActionException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Something is wrong");
+		}
 	}
 	
 	/** 
@@ -171,6 +236,7 @@ public class Agent21749914 implements Agent {
 							history[i].updateHandNotCard(v-1, colourIndex);
 						}
 					}
+					numCardRemaining--;
 					break;
 				case HINT_COLOUR:
 					receiver = previous.getHintReceiver();
@@ -364,10 +430,6 @@ public class Agent21749914 implements Agent {
 	 */
 	public Action tellAnyoneAboutUsefulCard(State s) throws IllegalActionException
 	{
-		if(s.getHintTokens() > 0)
-		{
-			return null;
-		}
 		Card[] playableCards = getPlaybleCards(s);
 
 		for(int player =  agentIndex+1; player != agentIndex; player = (player+1) % numPlayers)
@@ -669,42 +731,39 @@ public class Agent21749914 implements Agent {
 	 */
 	public Action osawaDiscard(State s) throws IllegalActionException
 	{
-		if(s.getHintTokens() != 8)
+		int minimumThrowableNumber = getMinimumThrowableNumber(s);
+		
+		boolean[] throwAbleColour =  noLongerPlayableColours(s);
+
+		for(int i = 0; i < history[agentIndex].cards.length; i++)
 		{
-			int minimumThrowableNumber = getMinimumThrowableNumber(s);
-			
-			boolean[] throwAbleColour =  noLongerPlayableColours(s);
+			CardHistory cardhistory = history[agentIndex].cards[i];
 
-			for(int i = 0; i < history[agentIndex].cards.length; i++)
+			if(cardhistory.isCardKnown())
 			{
-				CardHistory cardhistory = history[agentIndex].cards[i];
-
-				if(cardhistory.isCardKnown())
+				int value = 0;
+				if(!s.getFirework(cardhistory.colour).isEmpty())
 				{
-					int value = 0;
-					if(!s.getFirework(cardhistory.colour).isEmpty())
-					{
-						value = s.getFirework(cardhistory.colour).peek().getValue();
-					}
-					if(cardhistory.number < value || isCardDisconnected(value,cardhistory,agentIndex))
+					value = s.getFirework(cardhistory.colour).peek().getValue();
+				}
+				if(cardhistory.number < value || isCardDisconnected(value,cardhistory,agentIndex))
+				{
+					return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
+				}
+			} else {
+				if(cardhistory.isNumberKnown())
+				{
+					if(cardhistory.number < minimumThrowableNumber)
 					{
 						return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
 					}
-				} else {
-					if(cardhistory.isNumberKnown())
+				} 
+				if(cardhistory.isColourKnown())
+				{
+					int colourIndex = getColourIndex(cardhistory.colour);
+					if(throwAbleColour[colourIndex])
 					{
-						if(cardhistory.number < minimumThrowableNumber)
-						{
-							return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
-						}
-					} 
-					if(cardhistory.isColourKnown())
-					{
-						int colourIndex = getColourIndex(cardhistory.colour);
-						if(throwAbleColour[colourIndex])
-						{
-							return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
-						}
+						return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
 					}
 				}
 			}
