@@ -7,9 +7,6 @@
 package agents;
 
 import java.util.Stack;
-
-import javax.management.RuntimeErrorException;
-
 import java.util.Random;
 
 import hanabAI.Action;
@@ -38,6 +35,7 @@ public class Agent21749914 implements Agent {
 	private int numCardRemaining = 50;
 	private Colour[] colourArray = new Colour[]{Colour.BLUE, Colour.GREEN, Colour.RED, Colour.WHITE, Colour.YELLOW};
 	
+
 	@Override
 	public Action doAction(State s)
 	{
@@ -496,7 +494,14 @@ public class Agent21749914 implements Agent {
 		return null;
 	}
 
-	//returns the number new hints in a player's card history given for a specific question
+	/**
+	 * Returns the number of new pieces of info in a player's card history given for a specific hint.
+	 * @param playerCardHistory The array contains all the history of the cards in the player's hand.
+	 * @param playerhand The current hand of the player.
+	 * @param type The type of hint.
+	 * @param value The colour index or the number index depending which type of hint is.
+	 * @return the number of new pieces of info in a player's card history given for a specific hint. 
+	 */
 	public int newHintsGiven(CardHistory[] playerCardHistory,Card[] playerhand, ActionType type, int value)
 	{
 
@@ -537,8 +542,12 @@ public class Agent21749914 implements Agent {
 		return count;
 	}
 
-	
-	//returns if card is playable
+	/**
+	 * Check if a card is playable.
+	 * @param playableCards The set of cards that are playable.
+	 * @param card The card to be checked.
+	 * @return true if it is playable, false otherwise.
+	 */
 	public boolean isCardPlayable(Card[] playableCards, Card card) 
 	{
 		if(card == null)
@@ -556,7 +565,13 @@ public class Agent21749914 implements Agent {
 		return false;
 	}
 
-	//returns a boolean array indicating which cards are playable in the player hand
+	/**
+	 * Return a boolean array indicating which cards are playable in the player hand.
+	 * @param s The current State
+	 * @param playableCards The array contains cards that can be played.
+	 * @param player The player index
+	 * @return A boolean array indicating which cards are playable in the player hand.
+	 */
 	public boolean[] getPlayableHand(State s, Card[] playableCards, int player)
 	{
 		Card[] playerHand = s.getHand(player);
@@ -702,9 +717,11 @@ public class Agent21749914 implements Agent {
 		return null;
 	}
 
-
-
-	//returns the number which any card can be safely discarded if equal to or below the number
+	/**
+	 * Return the number which any card can be safely discarded if equal to or below the number
+	 * @param s The current State
+	 * @return the number which any card can be safely discarded.
+	 */
 	public int getMinimumThrowableNumber(State s)
 	{
 		int value = 9999;
@@ -725,6 +742,12 @@ public class Agent21749914 implements Agent {
 	}
 
 	//returns an boolean array identifying which colours are still playable
+	/**
+	 * Return an boolean array identifying which colours are still playable.
+	 * @param s The current State.
+	 * @return An boolean array identifying which colours are still playable.
+	 * If a colour is not playable, its index is set to true, false otherwise.
+	 */
 	public boolean[] noLongerPlayableColours(State s) 
 	{
 		boolean[] throwAbleColour = new boolean[colourArray.length];
@@ -798,7 +821,13 @@ public class Agent21749914 implements Agent {
 		return null;
 	}
 
-	//returns true if the card is dead because connecting cards have been discarded.
+	/**
+	 * Check if a card is no longer usable because cards connect to it are all discarded.
+	 * @param fireWorkValue The highest value of a particular firework.
+	 * @param cardhistory The history of the card we are examining.
+	 * @param player The index of the player.
+	 * @return true if the card is no longer usable, false otherwise.
+	 */
 	public boolean isCardDisconnected(int fireWorkValue, CardHistory cardhistory, int player) {
 		for(int j = fireWorkValue+1; j < cardhistory.number; j++)
 		{
@@ -892,7 +921,7 @@ public class Agent21749914 implements Agent {
 	 */
 	public String toString() 
 	{
-		return "トゥットゥルー♪"; //Tuturu ~♪
+		return "Tuturu ~♪"; //Tuturu ~♪
 	}
 	
 	/**
@@ -935,7 +964,9 @@ public class Agent21749914 implements Agent {
 			}
 		}
 
-		
+		/**
+		 * Update the number of turn a card is held.
+		 */
 		public void updateNumTurn() 
 		{
 			for(int i = 0; i < cards.length; i++)
@@ -943,7 +974,12 @@ public class Agent21749914 implements Agent {
 				cards[i].turn++;
 			}
 		}
-
+		
+		/**
+		 * Update the fact that our agent's hand cannot contain this card.
+		 * @param valueIndex The value of the card.
+		 * @param colourIndex The colour of the card.
+		 */
 		public void updateHandNotCard(int valueIndex, int colourIndex)
 		{
 			this.deck[valueIndex][colourIndex]--;
@@ -962,7 +998,7 @@ public class Agent21749914 implements Agent {
 	}
 	
 	/**
-	 * Store the probability what a card could be.
+	 * Store history of a card via hints and not hints.
 	 */
 	class CardHistory 
 	{
@@ -1006,33 +1042,44 @@ public class Agent21749914 implements Agent {
 			notColour = new boolean[5];	
 		}
 
-		//returns if the colour is known
+		/** Check if the number is known
+		 * @return true if the number is known or false otherwise.
+		 */
 		public boolean isNumberKnown()
 		{
 			return number != -1;
 		}
 
-		//returns if the colour is known
+		/** Check if the colour is known
+		 * @return true if the colour is known or false otherwise.
+		 */
 		public boolean isColourKnown()
 		{
 			return colour != null;
 		}
 
 		
-		//returns if card is known
+		/**
+		 * Check if the card is known (i.e. both colour & number are unknown)
+		 * @return true if both colour & number are known, false otherwise.
+		 */
 		public boolean isCardKnown()
 		{
 			return isColourKnown() && isNumberKnown();
 		}
 		
 		//returns if card is unknown
+		/**
+		 * Check if the card is unknown (i.e. both colour & number are unknown)
+		 * @return true if both colour & number are unknown, false otherwise.
+		 */
 		public boolean isCardUnknown()
 		{
 			return !isColourKnown() && !isNumberKnown();
 		}
 
 		/**
-		 * Reset what player knows about card.
+		 * Remove all previous hint a player knows about their card.
 		 * This occurs when the card is played or discarded.
 		 */
 		public void reset()
@@ -1054,7 +1101,9 @@ public class Agent21749914 implements Agent {
 			updateNotColourArray();
 		}
 
-		//updates the notNumber boolean array.
+		/**
+		 * Update the number the card cannot be by checking notCard
+		 */
 		public void updateNotNumberArray()
 		{
 			for(int row=0; row<notCard.length; row++)
@@ -1064,7 +1113,10 @@ public class Agent21749914 implements Agent {
 			checkIfNumberIsKnown();
 		}
 		
-		//updates notNumber if it cannot be a particular number.
+		/**
+		 * Update the particular number the card cannot be.
+		 * @param num The number the card cannot be.
+		 */
 		public void updateNotNumber(int num)
 		{
 			if(notNumber[num])
@@ -1086,7 +1138,9 @@ public class Agent21749914 implements Agent {
 			}
 		}
 
-		//updates the notColour boolean array
+		/**
+		 * Update the colour the card cannot be by checking notCard
+		 */
 		public void updateNotColourArray()
 		{
 			for(int col=0; col<notCard[0].length; col++)
@@ -1096,7 +1150,10 @@ public class Agent21749914 implements Agent {
 			checkIfColourIsKnown();
 		}
 		
-		//updates notColour if it cannot be a particular colour.
+		/**
+		 * Update the particular colour the card cannot be.
+		 * @param colour The colour the card cannot be.
+		 */
 		public void updateNotColour(int colour)
 		{
 			if(notColour[colour])
@@ -1120,7 +1177,7 @@ public class Agent21749914 implements Agent {
 		}
 		
 		/**
-		 * Update the colour that a card cannot be.
+		 * Set the colour the card cannot be via notColour.
 		 * @param c the colour the card cannot be.
 		 */
 		public void setNotColour(Colour c)
@@ -1135,7 +1192,9 @@ public class Agent21749914 implements Agent {
 			checkIfColourIsKnown();								
 		}
 
-		//check if there are enough hints to guess colour
+		/**
+		 * Check if our agent has enough hints to guess the colour.
+		 */
 		public void checkIfColourIsKnown()
 		{
 			if(colour != null)
@@ -1158,6 +1217,10 @@ public class Agent21749914 implements Agent {
 			}	
 		}
 		
+		/**
+		 * Set the card to be the colour c (because we know its colour is c).
+		 * @param c The colour we know is the card's colour.
+		 */
 		public void setColour(Colour c)
 		{
 			colour = c;
@@ -1185,6 +1248,10 @@ public class Agent21749914 implements Agent {
 			checkIfNumberIsKnown();
 		}
 		
+		/**
+		 * Set the card to be not this value
+		 * @param v The value the card cannot be.
+		 */
 		public void setNotValue(int v)
 		{
 			int row = v-1;
@@ -1197,7 +1264,9 @@ public class Agent21749914 implements Agent {
 			checkIfNumberIsKnown();
 		}
 
-		//check if there are enought hints to guess the number
+		/**
+		 * Check if our agent has enough hints to guess the number.
+		 */
 		public void checkIfNumberIsKnown()
 		{
 			if(number != -1)
@@ -1220,6 +1289,10 @@ public class Agent21749914 implements Agent {
 			}
 		}
 		
+		/**
+		 * Set the card to be the value v (because we know its value is v).
+		 * @param v The value we know is the card's value.
+		 */
 		public void setValue(int v)
 		{
 			number = v;
