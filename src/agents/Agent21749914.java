@@ -118,7 +118,7 @@ public class Agent21749914 implements Agent {
 		numPlayers = s.getPlayers().length;
 		history = new Perspective[numPlayers];
 
-		if(numPlayers == 5)
+		if(numPlayers > 3)
 		{
 			numCard = 4;
 		} else {
@@ -655,7 +655,7 @@ public class Agent21749914 implements Agent {
 			
 		boolean[] throwAbleColour =  noLongerPlayableColours(s);
 
-		for(int player =  agentIndex+1; player != agentIndex; player = (player+1) % numPlayers)
+		for(int player =  (agentIndex+1) % numPlayers; player != agentIndex; player = (player+1) % numPlayers)
 		{
 			Card[] playerHand = s.getHand(player);
 			
