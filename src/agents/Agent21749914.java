@@ -796,7 +796,7 @@ public class Agent21749914 implements Agent {
 				{
 					value = s.getFirework(cardhistory.colour).peek().getValue();
 				}
-				if(cardhistory.number < value || isCardDisconnected(value,cardhistory,agentIndex))
+				if(cardhistory.number < value || isCardDisconnected(value,cardhistory.number, cardhistory.colour,agentIndex))
 				{
 					return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
 				}
@@ -828,10 +828,10 @@ public class Agent21749914 implements Agent {
 	 * @param player The index of the player.
 	 * @return true if the card is no longer usable, false otherwise.
 	 */
-	public boolean isCardDisconnected(int fireWorkValue, CardHistory cardhistory, int player) {
-		for(int j = fireWorkValue+1; j < cardhistory.number; j++)
+	public boolean isCardDisconnected(int fireWorkValue, int value , Colour colour, int player) {
+		for(int j = fireWorkValue+1; j < value; j++)
 		{
-			if(history[player].deck[j][getColourIndex(cardhistory.colour)] == 0)
+			if(history[player].deck[j][getColourIndex(colour)] == 0)
 			{
 				return true;
 			}
