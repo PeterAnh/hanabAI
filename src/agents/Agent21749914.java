@@ -882,11 +882,6 @@ public class Agent21749914 implements Agent {
 		 */
 		public Perspective(int n)
 		{
-			cards = new CardHistory[n];
-			for(int i=0; i<cards.length; i++)
-			{
-				cards[i] = new CardHistory(deck);
-			}
 			deck = new int[5][5];
 			for(int number = 0; number < 5; number++)
 			{
@@ -905,6 +900,11 @@ public class Agent21749914 implements Agent {
 						deck[number][colour] = 1;
 					}
 				}
+			}
+			cards = new CardHistory[n];
+			for(int i=0; i<cards.length; i++)
+			{
+				cards[i] = new CardHistory(deck);
 			}
 		}
 
