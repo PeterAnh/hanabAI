@@ -318,6 +318,10 @@ public class Agent21749914 implements Agent {
 			//Check if the playable cards are ticked or not
 			for(int card = 0; card < playableCard.length; card++)
 			{
+				if(playableCard[card] == null) {
+					continue;
+				}
+				
 				int value = playableCard[card].getValue();
 				int colour = getColourIndex(playableCard[card].getColour());
 
@@ -372,7 +376,8 @@ public class Agent21749914 implements Agent {
 				value = s.getFirework(colourArray[i]).peek().getValue();
 				if(value == 5) //If the rocket is already completed
 				{
-					value = -1;
+					result[i] = null;
+					continue;
 				}
 			}
 			result[i] = new Card(colour, value+1);
@@ -432,7 +437,7 @@ public class Agent21749914 implements Agent {
 	{
 		Card[] playableCards = getPlaybleCards(s);
 
-		for(int player =  agentIndex+1; player != agentIndex; player = (player+1) % numPlayers)
+		for(int player = (agentIndex+1) % numPlayers; player != agentIndex; player = (player+1) % numPlayers)
 		{
 			Card[] playerHand = s.getHand(player);
 			CardHistory[] playerHistory = history[player].cards;
@@ -453,7 +458,7 @@ public class Agent21749914 implements Agent {
 				}
 				if(playerHistory[card].isNumberKnown() || !halfKnownCardFound)
 				{
-					int numHints = newHintsGiven(s, player, ActionType.HINT_COLOUR, getColourIndex(playerHand[card].getColour()));
+					int numHints = newHintsGiven(playerHistory, playerHand, ActionType.HINT_COLOUR, getColourIndex(playerHand[card].getColour()));
 					if(numHints > maxHints)
 					{
 						maxHints = numHints;
@@ -463,7 +468,7 @@ public class Agent21749914 implements Agent {
 				}
 				if(playerHistory[card].isColourKnown() || !halfKnownCardFound)
 				{
-					int numHints = newHintsGiven(s, player, ActionType.HINT_VALUE, playerHand[card].getValue());
+					int numHints = newHintsGiven(playerHistory, playerHand, ActionType.HINT_VALUE, playerHand[card].getValue());
 					if(numHints > maxHints)
 					{
 						maxHints = numHints;
@@ -492,17 +497,21 @@ public class Agent21749914 implements Agent {
 	}
 
 	//returns the number new hints in a player's card history given for a specific question
-	public int newHintsGiven(State s, int player, ActionType type, int value)
+	public int newHintsGiven(CardHistory[] playerCardHistory,Card[] playerhand, ActionType type, int value)
 	{
-		Card[] playerhand = s.getHand(player);
-		CardHistory[] playerCardHisotry = history[player].cards;
+
 		int count = 0;
 		switch(type)
 		{
 			case HINT_VALUE:
-				for(int i=0; i<playerCardHisotry.length; i++)
+				for(int i=0; i<playerCardHistory.length; i++)
 				{
-					if(!playerCardHisotry[i].isNumberKnown() && playerhand[i].getValue()==value)
+					if(playerhand[i] == null)
+					{
+						continue;
+					}
+					if(!playerCardHistory[i].isNumberKnown() 
+							&& playerhand[i].getValue()==value)
 					{
 						count++;
 					}
@@ -510,9 +519,14 @@ public class Agent21749914 implements Agent {
 				break;
 			case HINT_COLOUR:
 				Colour colour = colourArray[value];
-				for(int i=0; i<playerCardHisotry.length; i++)
+				for(int i=0; i<playerCardHistory.length; i++)
 				{
-					if(!playerCardHisotry[i].isColourKnown() && playerhand[i].getColour().equals(colour))
+					if(playerhand[i] == null)
+					{
+						continue;
+					}
+					if(!playerCardHistory[i].isColourKnown() 
+							&& playerhand[i].getColour().equals(colour))
 					{
 						count++;
 					}
@@ -527,9 +541,14 @@ public class Agent21749914 implements Agent {
 	//returns if card is playable
 	public boolean isCardPlayable(Card[] playableCards, Card card) 
 	{
+		if(card == null)
+		{
+			return false;
+		}
 		for(int i=0; i<playableCards.length; i++)
 		{
-			if(card.equals(playableCards[i]))
+			if(playableCards[i] != null && 
+					card.equals(playableCards[i]))
 			{
 				return true;
 			}
@@ -567,6 +586,10 @@ public class Agent21749914 implements Agent {
 
 		for(int i=0; i<cards.length; i++)
 		{
+			if(cards[i] == null)
+			{
+				continue;
+			}
 			if(cards[i].getColour() == c)
 			{
 				colourHints[i] = true;
@@ -588,6 +611,10 @@ public class Agent21749914 implements Agent {
 
 		for(int i=0; i<cards.length; i++)
 		{
+			if(cards[i] == null)
+			{
+				continue;
+			}
 			if(cards[i].getValue() == n)
 			{
 				numberHints[i] = true;
@@ -632,7 +659,7 @@ public class Agent21749914 implements Agent {
 				{
 					if(cardhistory.number < minimumThrowableNumber)
 					{
-						int numHints = newHintsGiven(s, player, ActionType.HINT_COLOUR, getColourIndex(playerHand[card].getColour()));
+						int numHints = newHintsGiven(history[player].cards, playerHand, ActionType.HINT_COLOUR, getColourIndex(playerHand[card].getColour()));
 						if(numHints > maxHints)
 						{
 							maxHints = numHints;
@@ -646,7 +673,7 @@ public class Agent21749914 implements Agent {
 					int colourIndex = getColourIndex(cardhistory.colour);
 					if(throwAbleColour[colourIndex])
 					{
-						int numHints = newHintsGiven(s, player, ActionType.HINT_VALUE, playerHand[card].getValue());
+						int numHints = newHintsGiven(history[player].cards, playerHand, ActionType.HINT_VALUE, playerHand[card].getValue());
 						if(numHints > maxHints)
 						{
 							maxHints = numHints;
@@ -982,13 +1009,13 @@ public class Agent21749914 implements Agent {
 		//returns if the colour is known
 		public boolean isNumberKnown()
 		{
-			return number == -1;
+			return number != -1;
 		}
 
 		//returns if the colour is known
 		public boolean isColourKnown()
 		{
-			return colour == null;
+			return colour != null;
 		}
 
 		

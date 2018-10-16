@@ -12,7 +12,8 @@ public class Card{
    * @throws IllegalArgumentException if the Value is not between 1 and 5 inclusive
    **/
   public Card(Colour c, int val) throws IllegalArgumentException{
-    if(val<1 || val>5) throw new IllegalArgumentException("Card value out of range");
+    if(val<1 || val>5) 
+    	throw new IllegalArgumentException("Card value out of range");
     colour = c;
     value = val;
   }
