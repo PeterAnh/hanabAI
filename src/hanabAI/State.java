@@ -84,19 +84,15 @@ public class State implements Cloneable{
          s.fuse--;
        }
        if(!deck.isEmpty()) s.hands[action.getPlayer()][action.getCard()] = deck.pop();
-       else{
-        if(finalAction==-1) s.finalAction = order+players.length;
-        s.hands[action.getPlayer()][action.getCard()] = null;
-       }
+       else s.hands[action.getPlayer()][action.getCard()] = null;
+       if(deck.isEmpty() && finalAction==-1) s.finalAction = order+players.length;
        break;  
      case DISCARD:
        c = hands[action.getPlayer()][action.getCard()];
        s.discards.push(c);
        if(!deck.isEmpty()) s.hands[action.getPlayer()][action.getCard()] = deck.pop();
-       else{
-        if(finalAction==-1) s.finalAction = order+players.length;
-        s.hands[action.getPlayer()][action.getCard()] = null;
-       }
+       else s.hands[action.getPlayer()][action.getCard()] = null;
+       if(deck.isEmpty() && finalAction==-1) s.finalAction = order+players.length;
        if(hints<8) s.hints++;
        break;
      case HINT_COLOUR: 
@@ -137,6 +133,7 @@ public class State implements Cloneable{
    * @throws IllegalActionException
    **/
   public boolean legalAction(Action a) throws IllegalActionException{
+    if(a==null) throw new IllegalActionException("Action is null");
     if(observer!=-1 && a.getPlayer()!=observer) throw new IllegalActionException("Local states may only test the legality of observers moves");
     if(a.getPlayer()!=nextPlayer) return false;
     switch(a.getType()){
@@ -197,7 +194,7 @@ public class State implements Cloneable{
    **/
   public State getPreviousState(){
     State s = previousState;
-    s.observer = observer;
+    if(s!=null) s.observer = observer;
     return s;
   }
 
@@ -308,7 +305,7 @@ public class State implements Cloneable{
    * @return true if all fireworks have been made, the deck has run out, or a fues has exploded.
    **/
   public boolean gameOver(){
-    return (order==finalAction || fuse == 0 || getScore()==25);
+    return ((finalAction!=-1 &&order==finalAction+1) || fuse == 0 || getScore()==25);
   }
 
   /**
@@ -340,6 +337,11 @@ public class State implements Cloneable{
     ret+="Players' hands:\n";
     for(int i = 0; i<players.length; i++){
       ret+=players[i]+" ("+i+"): ";
+      if(i == observer){
+        for(Card c: hands[i])ret+="-         ";
+        ret+="\n";
+        continue;
+      }
       for(Card c: hands[i])ret+=c+" ";
       ret+="\n";
     }
