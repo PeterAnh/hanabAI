@@ -846,13 +846,20 @@ public class Agent21749914 implements Agent {
 	 */
 	public Action discardOldestFirst(State s) throws IllegalActionException
 	{
+		int maxCard = 0;
+		int maxTurn = 0;
 		for(int i = 0; i < numCard; i++)
 		{
 			CardHistory card = history[s.getObserver()].cards[i];
-			if(card.turn > 5)
+			if(card.turn > maxTurn)
 			{
-				return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, i);
+				maxTurn = card.turn;
+				maxCard = i;
 			}
+		}
+		if(maxTurn > 5)
+		{
+			return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, maxCard);
 		}
 		return null;
 	}

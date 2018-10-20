@@ -1,11 +1,16 @@
 package hanabAI;
 
+import java.util.Random;
+
+import agents.Agent21749914;
 
 /**
- * A class for running a single game of Hanabi.
- * An array of 2-5 agents is provided, a deal is initialised and players takes turns until the game ends and the score is reported.
+ * A class for running a single game of Hanabi. An array of 2-5 agents is
+ * provided, a deal is initialised and players takes turns until the game ends
+ * and the score is reported.
+ * 
  * @author Tim French
- * */
+ */
 public class Hanabi{
 
   private Agent[] players;
@@ -80,22 +85,13 @@ public class Hanabi{
    * The agent implementations should be in the default package.
    * */
   public static void main(String[] args){
-    int result = 0;
-    for(int i = 0; i<10000; i++) {
-      Agent[] agents = {new agents.Agent20163079(),new agents.Agent20163079()};
-      Hanabi game= new Hanabi(agents);
-      result = result + game.play();
-    }
-    System.out.println((double) result / 10000);
-
-
-    // Agent[] agents = {new agents.Agent20163079(),new agents.Agent20163079()};
-    // Hanabi game= new Hanabi(agents);
-    // StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
-    // int result = game.play(log);
-    // log.append("The final score is "+result+".\n");
-    // log.append(critique(result));
-    // System.out.print(log);
+    Agent[] agents = {new agents.Agent20163079(),new agents.Agent20163079()};
+    Hanabi game= new Hanabi(agents);
+    StringBuffer log = new StringBuffer("A simple game for three basic agents:\n");
+    int result = game.play(log);
+    log.append("The final score is "+result+".\n");
+    log.append(critique(result));
+    System.out.print(log);
   }
 }
 

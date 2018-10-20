@@ -92,13 +92,7 @@ public class Agent20163079 implements Agent {
 				a = discardOldestFirst(s);
 				if(a != null) return a;
 			}
-			
-			if(hintTokens > 0)
-			{
-				a = tellRandomly(s);
-				if(a != null) return a;
-			}
-			
+						
 			if(hintTokens < 8)
 			{
 				a = discardRandomly(s);
@@ -384,7 +378,7 @@ public class Agent20163079 implements Agent {
 						sumAllRemainingCard = sumAllRemainingCard + temp[row][col];
 					}
 					
-					if(isCardDiscardable(s, row+1, colourArray[col], s.getObserver()) && temp[row][col] > 0)
+					if(temp[row][col] > 0 && isCardDiscardable(s, row+1, colourArray[col], s.getObserver()))
 					{
 						sumPossibleCard = sumPossibleCard + temp[row][col];
 					}
@@ -395,7 +389,7 @@ public class Agent20163079 implements Agent {
 			//Get the discardability
 			double discardability = (double) sumPossibleCard / sumAllRemainingCard;
 
-			if(discardability >= highestDiscardability)
+			if(discardability > highestDiscardability)
 			{
 				highestDiscardability = discardability;
 				cardToPlay = i;
@@ -639,6 +633,7 @@ public class Agent20163079 implements Agent {
 		int maxPlayer = 0;
 		int maxHints = 0;
 		int maxCard = 0;
+		Card[] maxPlayerHand = null;
 		Card[] playerHand = null;
 		ActionType type = ActionType.PLAY;
 		
@@ -665,6 +660,7 @@ public class Agent20163079 implements Agent {
 						maxPlayer = player;
 						maxHints = numHints;
 						maxCard = card;
+						maxPlayerHand = playerHand;
 						type = ActionType.HINT_COLOUR;
 					}
 				}
@@ -676,33 +672,24 @@ public class Agent20163079 implements Agent {
 						maxPlayer = player;
 						maxHints = numHints;
 						maxCard = card;
+						maxPlayerHand = playerHand;
 						type = ActionType.HINT_VALUE;
 					}
 				}
 			}
 		}
 		
-		Action a;
-		if(maxHints > 0)
+		if(maxHints > 1)
 		{
 			switch(type){
 			case HINT_VALUE:
-				a = new Action(s.getObserver(),this.toString(),
+				return new Action(s.getObserver(),this.toString(),
 						ActionType.HINT_VALUE,maxPlayer,
-						getNumberHint(playerHand,playerHand[maxCard].getValue()),playerHand[maxCard].getValue());
-				if(!s.legalAction(a))
-				{
-					System.out.println("illegal");
-				}
+						getNumberHint(maxPlayerHand,maxPlayerHand[maxCard].getValue()),maxPlayerHand[maxCard].getValue());
 			case HINT_COLOUR:
-				a = new Action(s.getObserver(),this.toString(),
+				return new Action(s.getObserver(),this.toString(),
 						ActionType.HINT_COLOUR,maxPlayer,
-						getColourHint(playerHand,playerHand[maxCard].getColour()),playerHand[maxCard].getColour());
-				if(!s.legalAction(a))
-				{
-					System.out.println("illegal");
-				}
-				
+						getColourHint(maxPlayerHand,maxPlayerHand[maxCard].getColour()),maxPlayerHand[maxCard].getColour());
 			default:
 			}
 		}
@@ -1084,15 +1071,18 @@ public class Agent20163079 implements Agent {
 	 */
 	public Action discardOldestFirst(State s) throws IllegalActionException
 	{
+		int maxTurns = 0;
+		int maxCard = 0;
 		for(int i = 0; i < numCard; i++)
 		{
 			CardHistory card = history[s.getObserver()].cards[i];
-			if(card.turn > 5)
+			if(card.turn > maxTurns)
 			{
-				return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, i);
+				maxTurns = card.turn;
+				maxCard = i;
 			}
 		}
-		return null;
+		return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, maxCard);
 	}
 	/**
 	 * tellRandomly: Tells the next player a random fact about any card in their hand.
