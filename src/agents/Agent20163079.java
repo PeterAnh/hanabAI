@@ -31,8 +31,7 @@ public class Agent20163079 implements Agent {
 	private Perspective[] history;
 	private int numCard;
 	private boolean firstAction = true;
-	private int agentIndex;
-	private int numCardRemaining = 50;
+	//private int numCardRemaining = 50;
 	private Colour[] colourArray = new Colour[]{Colour.BLUE, Colour.GREEN, Colour.RED, Colour.WHITE, Colour.YELLOW};
 	
 
@@ -121,7 +120,6 @@ public class Agent20163079 implements Agent {
 	 */
 	public void init(State s)
 	{
-		agentIndex = s.getObserver();
 		numPlayers = s.getPlayers().length;
 		history = new Perspective[numPlayers];
 
@@ -142,7 +140,7 @@ public class Agent20163079 implements Agent {
 		//Updating each player's perspective
 		for(int i = 0; i < numPlayers; i++)
 		{
-			if(i == agentIndex)
+			if(i == s.getObserver())
 			{
 				continue;
 			}
@@ -241,7 +239,7 @@ public class Agent20163079 implements Agent {
 							history[i].updateHandNotCard(v-1, colourIndex);
 						}
 					}
-					numCardRemaining--;
+					//numCardRemaining--;
 					break;
 				case HINT_COLOUR:
 					receiver = previous.getHintReceiver();
@@ -300,12 +298,12 @@ public class Agent20163079 implements Agent {
 		Card[] playableCard = getPlaybleCards(s);
 		
 		//Loop through our hand
-		for(int i = 0; i < history[agentIndex].cards.length; i++)
+		for(int i = 0; i < history[s.getObserver()].cards.length; i++)
 		{	
 			int sumPossibleCard = 0;
 			int sumAllRemainingCard = 0;
 			
-			int[][] temp = history[agentIndex].cards[i].notCard;
+			int[][] temp = history[s.getObserver()].cards[i].notCard;
 
 			//Loop through the boolean table of each card
 			//Take the sum of the number of all the not-ticked cards
@@ -350,7 +348,7 @@ public class Agent20163079 implements Agent {
 		//Play the card with highest probability (if there is a card to play)
 		if(cardToPlay != -1)
 		{
-			return new Action(agentIndex,this.toString(),ActionType.PLAY,cardToPlay);
+			return new Action(s.getObserver(),this.toString(),ActionType.PLAY,cardToPlay);
 		}
 		return null;
 	}
@@ -368,12 +366,12 @@ public class Agent20163079 implements Agent {
 		int cardToPlay = -1;
 		
 		//Loop through our hand
-		for(int i = 0; i < history[agentIndex].cards.length; i++)
+		for(int i = 0; i < history[s.getObserver()].cards.length; i++)
 		{	
 			int sumAllRemainingCard = 0;
 			int sumPossibleCard = 0;
 			
-			int[][] temp = history[agentIndex].cards[i].notCard;
+			int[][] temp = history[s.getObserver()].cards[i].notCard;
 
 			//Loop through the boolean table of each card
 			//Take the sum of the number of all the not-ticked cards
@@ -386,7 +384,7 @@ public class Agent20163079 implements Agent {
 						sumAllRemainingCard = sumAllRemainingCard + temp[row][col];
 					}
 					
-					if(isCardDiscardable(s, row+1, colourArray[col], agentIndex) && temp[row][col] > 0)
+					if(isCardDiscardable(s, row+1, colourArray[col], s.getObserver()) && temp[row][col] > 0)
 					{
 						sumPossibleCard = sumPossibleCard + temp[row][col];
 					}
@@ -407,7 +405,7 @@ public class Agent20163079 implements Agent {
 		//Play the card with highest probability (if there is a card to play)
 		if(cardToPlay != -1)
 		{
-			return new Action(agentIndex,this.toString(),ActionType.DISCARD,cardToPlay);
+			return new Action(s.getObserver(),this.toString(),ActionType.DISCARD,cardToPlay);
 		}
 		return null;
 	}
@@ -464,14 +462,14 @@ public class Agent20163079 implements Agent {
 			}
 
 			//Check which card you already know that is playable
-			for(int j = 0; j < history[agentIndex].cards.length; j++)
+			for(int j = 0; j < history[s.getObserver()].cards.length; j++)
 			{
-				if(history[agentIndex].cards[j].number == value+1)
+				if(history[s.getObserver()].cards[j].number == value+1)
 				{
-					if(history[agentIndex].cards[j].colour == colourArray[i])
+					if(history[s.getObserver()].cards[j].colour == colourArray[i])
 					{
 						//Play the damn card
-						return new Action(agentIndex,this.toString(),ActionType.PLAY,j);
+						return new Action(s.getObserver(),this.toString(),ActionType.PLAY,j);
 					}
 				}
 			}
@@ -494,7 +492,7 @@ public class Agent20163079 implements Agent {
 	{
 		Card[] playableCards = getPlaybleCards(s);
 
-		for(int player = (agentIndex+1) % numPlayers; player != agentIndex; player = (player+1) % numPlayers)
+		for(int player = (s.getObserver()+1) % numPlayers; player != s.getObserver(); player = (player+1) % numPlayers)
 		{
 			Card[] playerHand = s.getHand(player);
 			CardHistory[] playerHistory = history[player].cards;
@@ -539,11 +537,11 @@ public class Agent20163079 implements Agent {
 			{
 				switch(type){
 					case HINT_VALUE:
-						return new Action(agentIndex,this.toString(),
+						return new Action(s.getObserver(),this.toString(),
 							ActionType.HINT_VALUE,player,
 							getNumberHint(playerHand,playerHand[maxCard].getValue()),playerHand[maxCard].getValue());
 					case HINT_COLOUR:
-						return new Action(agentIndex,this.toString(),
+						return new Action(s.getObserver(),this.toString(),
 							ActionType.HINT_COLOUR,player,
 							getColourHint(playerHand,playerHand[maxCard].getColour()),playerHand[maxCard].getColour());
 					default:
@@ -565,7 +563,7 @@ public class Agent20163079 implements Agent {
 	 */
 	public Action tellAnyoneAboutUselessCard(State s) throws IllegalActionException
 	{
-		for(int player = (agentIndex+1) % numPlayers; player != agentIndex; player = (player+1) % numPlayers)
+		for(int player = (s.getObserver()+1) % numPlayers; player != s.getObserver(); player = (player+1) % numPlayers)
 		{
 			Card[] playerHand = s.getHand(player);
 			CardHistory[] playerHistory = history[player].cards;
@@ -613,11 +611,11 @@ public class Agent20163079 implements Agent {
 			{
 				switch(type){
 					case HINT_VALUE:
-						return new Action(agentIndex,this.toString(), type,player,
+						return new Action(s.getObserver(),this.toString(), type,player,
 							getNumberHint(playerHand,playerHand[maxCard].getValue()),playerHand[maxCard].getValue());
 
 					case HINT_COLOUR:
-						return new Action(agentIndex,this.toString(), type,player,
+						return new Action(s.getObserver(),this.toString(), type,player,
 							getColourHint(playerHand,playerHand[maxCard].getColour()),playerHand[maxCard].getColour());
 					default:
 				}
@@ -644,7 +642,7 @@ public class Agent20163079 implements Agent {
 		Card[] playerHand = null;
 		ActionType type = ActionType.PLAY;
 		
-		for(int player = (agentIndex+1) % numPlayers; player != agentIndex; player = (player+1) % numPlayers)
+		for(int player = (s.getObserver()+1) % numPlayers; player != s.getObserver(); player = (player+1) % numPlayers)
 		{
 			playerHand = s.getHand(player);
 			CardHistory[] playerHistory = history[player].cards;
@@ -689,7 +687,7 @@ public class Agent20163079 implements Agent {
 		{
 			switch(type){
 			case HINT_VALUE:
-				a = new Action(agentIndex,this.toString(),
+				a = new Action(s.getObserver(),this.toString(),
 						ActionType.HINT_VALUE,maxPlayer,
 						getNumberHint(playerHand,playerHand[maxCard].getValue()),playerHand[maxCard].getValue());
 				if(!s.legalAction(a))
@@ -697,7 +695,7 @@ public class Agent20163079 implements Agent {
 					System.out.println("illegal");
 				}
 			case HINT_COLOUR:
-				a = new Action(agentIndex,this.toString(),
+				a = new Action(s.getObserver(),this.toString(),
 						ActionType.HINT_COLOUR,maxPlayer,
 						getColourHint(playerHand,playerHand[maxCard].getColour()),playerHand[maxCard].getColour());
 				if(!s.legalAction(a))
@@ -893,7 +891,7 @@ public class Agent20163079 implements Agent {
 			
 		boolean[] throwAbleColour =  noLongerPlayableColours(s);
 
-		for(int player =  (agentIndex+1) % numPlayers; player != agentIndex; player = (player+1) % numPlayers)
+		for(int player =  (s.getObserver()+1) % numPlayers; player != s.getObserver(); player = (player+1) % numPlayers)
 		{
 			Card[] playerHand = s.getHand(player);
 			
@@ -941,11 +939,11 @@ public class Agent20163079 implements Agent {
 			{
 				switch(type){
 					case HINT_VALUE:
-						return new Action(agentIndex,this.toString(),
+						return new Action(s.getObserver(),this.toString(),
 							ActionType.HINT_VALUE,player,
 							getNumberHint(playerHand,playerHand[maxCard].getValue()),playerHand[maxCard].getValue());
 					case HINT_COLOUR:
-						return new Action(agentIndex,this.toString(),
+						return new Action(s.getObserver(),this.toString(),
 							ActionType.HINT_COLOUR,player,
 							getColourHint(playerHand,playerHand[maxCard].getColour()),playerHand[maxCard].getColour());
 					default:
@@ -996,7 +994,7 @@ public class Agent20163079 implements Agent {
 			{
 				value = s.getFirework(colourArray[i]).peek().getValue();
 			}
-			if(value == 5 || history[agentIndex].deck[value][getColourIndex(colourArray[i])] == 0)
+			if(value == 5 || history[s.getObserver()].deck[value][getColourIndex(colourArray[i])] == 0)
 			{
 				throwAbleColour[getColourIndex(colourArray[i])] = true;
 			}
@@ -1023,9 +1021,9 @@ public class Agent20163079 implements Agent {
 		
 		boolean[] throwAbleColour =  noLongerPlayableColours(s);
 
-		for(int i = 0; i < history[agentIndex].cards.length; i++)
+		for(int i = 0; i < history[s.getObserver()].cards.length; i++)
 		{
-			CardHistory cardhistory = history[agentIndex].cards[i];
+			CardHistory cardhistory = history[s.getObserver()].cards[i];
 
 			if(cardhistory.isCardKnown())
 			{
@@ -1034,16 +1032,16 @@ public class Agent20163079 implements Agent {
 				{
 					value = s.getFirework(cardhistory.colour).peek().getValue();
 				}
-				if(cardhistory.number < value || isCardDisconnected(value, cardhistory.number, cardhistory.colour,agentIndex))
+				if(cardhistory.number < value || isCardDisconnected(value, cardhistory.number, cardhistory.colour,s.getObserver()))
 				{
-					return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
+					return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, i);
 				}
 			} else {
 				if(cardhistory.isNumberKnown())
 				{
 					if(cardhistory.number < minimumThrowableNumber)
 					{
-						return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
+						return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, i);
 					}
 				} 
 				if(cardhistory.isColourKnown())
@@ -1051,7 +1049,7 @@ public class Agent20163079 implements Agent {
 					int colourIndex = getColourIndex(cardhistory.colour);
 					if(throwAbleColour[colourIndex])
 					{
-						return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
+						return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, i);
 					}
 				}
 			}
@@ -1088,10 +1086,10 @@ public class Agent20163079 implements Agent {
 	{
 		for(int i = 0; i < numCard; i++)
 		{
-			CardHistory card = history[agentIndex].cards[i];
+			CardHistory card = history[s.getObserver()].cards[i];
 			if(card.turn > 5)
 			{
-				return new Action(agentIndex, this.toString(), ActionType.DISCARD, i);
+				return new Action(s.getObserver(), this.toString(), ActionType.DISCARD, i);
 			}
 		}
 		return null;
@@ -1106,7 +1104,7 @@ public class Agent20163079 implements Agent {
 	public Action tellRandomly(State s) throws IllegalActionException
 	{
 		if(s.getHintTokens()>0){
-			int hintee = (agentIndex+1)%numPlayers;
+			int hintee = (s.getObserver()+1)%numPlayers;
 			Card[] hand = s.getHand(hintee);
 	
 			java.util.Random rand = new java.util.Random();
@@ -1119,7 +1117,7 @@ public class Agent20163079 implements Agent {
 			  for(int k = 0; k< col.length; k++){
 				col[k]=c.getColour().equals((hand[k]==null?null:hand[k].getColour()));
 			  }
-			  return new Action(agentIndex,toString(),ActionType.HINT_COLOUR,hintee,col,c.getColour());
+			  return new Action(s.getObserver(),toString(),ActionType.HINT_COLOUR,hintee,col,c.getColour());
 			}
 			else{//give value hint
 			  boolean[] val = new boolean[hand.length];
@@ -1127,7 +1125,7 @@ public class Agent20163079 implements Agent {
 				if (hand[k] == null) continue;
 				val[k]=c.getValue() == (hand[k]==null?-1:hand[k].getValue());
 			  }
-			  return new Action(agentIndex,toString(),ActionType.HINT_VALUE,hintee,val,c.getValue());
+			  return new Action(s.getObserver(),toString(),ActionType.HINT_VALUE,hintee,val,c.getValue());
 			}
 	
 		  }
@@ -1147,8 +1145,8 @@ public class Agent20163079 implements Agent {
 		{
 			Random rand = new Random();
 			int cardIndex = rand.nextInt(numCard);
-			history[agentIndex].cards[cardIndex].reset();
-			return new Action(agentIndex, toString(), ActionType.DISCARD, cardIndex);
+			history[s.getObserver()].cards[cardIndex].reset();
+			return new Action(s.getObserver(), toString(), ActionType.DISCARD, cardIndex);
 		}
 		return null;
 	}
